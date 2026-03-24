@@ -13,7 +13,6 @@ import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { useMapStore } from '@/store/mapStore'
 import { useUIStore } from '@/store/uiStore'
 import { useQuery } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/client'
 import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { AnyEvent } from '@/types'
@@ -30,19 +29,9 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
 }
 
 async function fetchEventDetail(id: string) {
-  const supabase = createClient()
-  const { data } = await supabase
-    .from('global_events')
-    .select(`
-      *,
-      countries ( name, region ),
-      conflict_zones ( *, conflict_updates ( * ) ),
-      news_articles ( * ),
-      weather_events ( * )
-    `)
-    .eq('id', id)
-    .single()
-  return data
+  const res = await fetch(`/api/events/${id}`, { cache: 'no-store' })
+  if (!res.ok) return null
+  return res.json()
 }
 
 export function IntelDrawer() {
