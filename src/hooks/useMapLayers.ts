@@ -42,16 +42,18 @@ async function fetchMapEvents(activeLayers: Set<string>, dateHours: number) {
 
   if (activeTypes.length === 0) return []
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('global_events')
     .select('id, type, title, severity, country_id, lat, lng, occurred_at')
-    .in('type', activeTypes)
+    .in('type', [...new Set(activeTypes)])  // dedupe (weather+disasters both → weather)
     .eq('is_active', true)
     .gte('occurred_at', cutoff)
     .not('lat', 'is', null)
     .not('lng', 'is', null)
     .order('occurred_at', { ascending: false })
     .limit(500)
+
+  if (error) throw new Error(error.message)
 
   return (data ?? []).filter(
     (e): e is EventPoint =>

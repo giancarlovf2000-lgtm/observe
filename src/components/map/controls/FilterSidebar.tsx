@@ -144,12 +144,13 @@ export function FilterSidebar() {
                     const Icon = ICON_MAP[layer.icon] || Filter
                     const active = isActive(layer.id as LayerId)
                     return (
-                      <label
+                      <div
                         key={layer.id}
                         className={cn(
                           'flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors cursor-pointer select-none',
                           active ? 'bg-white/5' : 'hover:bg-white/3'
                         )}
+                        onClick={() => toggleLayer(layer.id as LayerId)}
                       >
                         <div
                           className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
@@ -171,10 +172,10 @@ export function FilterSidebar() {
                         </span>
                         <Switch
                           checked={active}
-                          className="h-3.5 w-6 data-[state=checked]:bg-[var(--obs-teal)]"
-                          onCheckedChange={() => toggleLayer(layer.id as LayerId)}
+                          onCheckedChange={() => {}}
+                          className="h-3.5 w-6 data-[state=checked]:bg-[var(--obs-teal)] pointer-events-none"
                         />
-                      </label>
+                      </div>
                     )
                   })}
                 </div>
