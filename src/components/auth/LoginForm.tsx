@@ -39,7 +39,16 @@ export function LoginForm() {
     })
 
     if (authError) {
-      setError(authError.message)
+      const msg = authError.message.toLowerCase()
+      if (msg.includes('invalid login') || msg.includes('invalid credentials') || msg.includes('wrong password')) {
+        setError('Incorrect email or password. Please try again.')
+      } else if (msg.includes('email not confirmed')) {
+        setError('Please confirm your email address before signing in.')
+      } else if (msg.includes('too many requests')) {
+        setError('Too many attempts. Please wait a moment and try again.')
+      } else {
+        setError(authError.message)
+      }
       return
     }
 

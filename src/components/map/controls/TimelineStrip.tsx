@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Clock, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
@@ -38,6 +39,14 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 export function TimelineStrip() {
+  const [clockStr, setClockStr] = useState('')
+  useEffect(() => {
+    const tick = () => setClockStr(new Date().toUTCString().slice(17, 25))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
+
   const { data: events = [] } = useQuery({
     queryKey: ['timeline-events'],
     queryFn: fetchLatestEvents,
@@ -91,7 +100,7 @@ export function TimelineStrip() {
       <div className="flex items-center gap-1.5 px-3 border-l border-border/30 flex-shrink-0 h-full">
         <Clock className="w-3 h-3 text-muted-foreground/60" />
         <span className="text-[10px] font-mono text-muted-foreground/60">
-          {new Date().toUTCString().slice(17, 25)} UTC
+          {clockStr} UTC
         </span>
       </div>
     </div>
