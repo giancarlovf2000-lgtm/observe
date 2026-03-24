@@ -1,8 +1,8 @@
 import { Metadata } from 'next'
-import { MapPageClient } from '@/components/map/MapPageClient'
+import { MapPageLoader } from '@/components/map/MapPageLoader'
 
 export const metadata: Metadata = { title: 'World Map' }
 
 export default function MapPage() {
-  return <MapPageClient />
+  return <MapPageLoader />
 }

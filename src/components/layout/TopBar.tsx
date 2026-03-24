@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, Bell, LogOut, User, Settings, ChevronDown } from 'lucide-react'
@@ -18,6 +19,13 @@ export function TopBar() {
   const router = useRouter()
   const { openCommand } = useUIStore()
   const { user } = useAuthStore()
+  const [clockStr, setClockStr] = useState('')
+  useEffect(() => {
+    const tick = () => setClockStr(new Date().toUTCString().slice(0, 25))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -44,7 +52,7 @@ export function TopBar() {
         <div className="hidden sm:flex items-center gap-2">
           <div className="w-px h-4 bg-border/60" />
           <span className="text-xs text-muted-foreground">
-            {new Date().toUTCString().slice(0, 25)}
+            {clockStr}
           </span>
         </div>
       </div>
