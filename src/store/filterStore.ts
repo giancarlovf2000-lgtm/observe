@@ -45,7 +45,7 @@ interface FilterStore {
   toggleShowOnlyWatchlist: () => void
 }
 
-export const DEFAULT_ACTIVE: LayerId[] = ['conflicts', 'news', 'weather', 'disasters']
+export const DEFAULT_ACTIVE: LayerId[] = []
 
 export const useFilterStore = create<FilterStore>()(
   subscribeWithSelector(
@@ -96,7 +96,7 @@ export const useFilterStore = create<FilterStore>()(
           set((s) => ({ showOnlyWatchlist: !s.showOnlyWatchlist })),
       }),
       {
-        name: 'observe-filters',
+        name: 'observe-filters-v2',
         // Set/Map aren't serializable — convert for storage
         partialize: (s) => ({
           activeLayers: [...s.activeLayers],

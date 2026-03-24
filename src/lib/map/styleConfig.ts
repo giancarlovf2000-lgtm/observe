@@ -9,9 +9,8 @@ export function getMapStyle(key?: string | null): string {
   if (isValidKey(key)) {
     return `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
   }
-  // Fallback: use a free public style (no API key required)
-  // OSM Bright Dark from MapTiler (public access)
-  return 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json'
+  // Fallback: CARTO Dark Matter — completely free, no API key required
+  return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
 }
 
 // Alternative styles
@@ -19,15 +18,15 @@ export const MAP_STYLES = {
   dark: (key?: string) =>
     isValidKey(key)
       ? `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
-      : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
+      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   satellite: (key?: string) =>
     isValidKey(key)
       ? `https://api.maptiler.com/maps/satellite/style.json?key=${key}`
-      : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
+      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   terrain: (key?: string) =>
     isValidKey(key)
       ? `https://api.maptiler.com/maps/outdoor/style.json?key=${key}`
-      : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
+      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
 }
 
 export const SEVERITY_COLORS = {
