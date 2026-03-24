@@ -19,7 +19,8 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('global_events')
     .select('id, type, title, severity, country_id, lat, lng, occurred_at')
-    .in('type', types)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .in('type', types as any)
     .eq('is_active', true)
     .gte('occurred_at', cutoff)
     .not('lat', 'is', null)
