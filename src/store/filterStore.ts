@@ -55,7 +55,8 @@ export const useFilterStore = create<FilterStore>()(
 
         toggleLayer: (id) =>
           set((s) => {
-            const next = new Set(s.activeLayers)
+            const current = s.activeLayers instanceof Set ? s.activeLayers : new Set<LayerId>(Array.isArray(s.activeLayers) ? s.activeLayers as LayerId[] : [])
+            const next = new Set(current)
             if (next.has(id)) next.delete(id)
             else next.add(id)
             return { activeLayers: next }
@@ -96,18 +97,19 @@ export const useFilterStore = create<FilterStore>()(
           set((s) => ({ showOnlyWatchlist: !s.showOnlyWatchlist })),
       }),
       {
-        name: 'observe-filters-v2',
+        name: 'observe-filters-v3',
         // Set/Map aren't serializable — convert for storage
         partialize: (s) => ({
-          activeLayers: [...s.activeLayers],
+          activeLayers: s.activeLayers instanceof Set ? [...s.activeLayers] : Array.isArray(s.activeLayers) ? s.activeLayers : [],
           severityMin: s.severityMin,
           dateHours: s.dateHours,
         }),
         merge: (persisted: unknown, current) => {
-          const p = persisted as { activeLayers?: string[]; severityMin?: string; dateHours?: number }
+          const p = (persisted && typeof persisted === 'object' ? persisted : {}) as { activeLayers?: unknown; severityMin?: string; dateHours?: number }
+          const layerArray = Array.isArray(p.activeLayers) ? (p.activeLayers as LayerId[]) : DEFAULT_ACTIVE
           return {
             ...current,
-            activeLayers: new Set<LayerId>((p.activeLayers as LayerId[]) ?? DEFAULT_ACTIVE),
+            activeLayers: new Set<LayerId>(layerArray),
             severityMin: (p.severityMin as FilterStore['severityMin']) ?? 'minimal',
             dateHours: (p.dateHours as FilterStore['dateHours']) ?? 168,
           }

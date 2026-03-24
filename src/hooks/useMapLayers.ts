@@ -84,7 +84,13 @@ async function fetchFlights() {
 }
 
 export function useMapLayers() {
-  const { activeLayers, dateHours } = useFilterStore()
+  const rawActiveLayers = useFilterStore((s) => s.activeLayers)
+  const dateHours = useFilterStore((s) => s.dateHours)
+  // Defensive: ensure activeLayers is always a Set regardless of persist hydration
+  const activeLayers: Set<string> = rawActiveLayers instanceof Set
+    ? rawActiveLayers
+    : new Set<string>(Array.isArray(rawActiveLayers) ? rawActiveLayers : [])
+
   const { setSelectedEvent, hoveredEventId, setHoveredEventId } = useMapStore()
   const { openIntelDrawer } = useUIStore()
 
@@ -92,25 +98,28 @@ export function useMapLayers() {
     activeLayers.has('weather') || activeLayers.has('disasters') ||
     activeLayers.has('markets') || activeLayers.has('political')
 
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
+  const { data: events = [], isLoading: eventsLoading, isError: eventsError } = useQuery({
     queryKey: ['map-events', [...activeLayers].sort().join(','), dateHours],
     queryFn: () => fetchMapEvents(activeLayers, dateHours),
     enabled: hasEventLayers,
     refetchInterval: 60_000,
+    retry: 2,
   })
 
-  const { data: vessels = [], isLoading: vesselsLoading } = useQuery({
+  const { data: vessels = [], isLoading: vesselsLoading, isError: vesselsError } = useQuery({
     queryKey: ['map-vessels'],
     queryFn: fetchVessels,
     enabled: activeLayers.has('shipping'),
     refetchInterval: 30_000,
+    retry: 2,
   })
 
-  const { data: flights = [], isLoading: flightsLoading } = useQuery({
+  const { data: flights = [], isLoading: flightsLoading, isError: flightsError } = useQuery({
     queryKey: ['map-flights'],
     queryFn: fetchFlights,
     enabled: activeLayers.has('flights'),
     refetchInterval: 30_000,
+    retry: 2,
   })
 
   const layers = useMemo(() => {
@@ -305,11 +314,17 @@ export function useMapLayers() {
     return result
   }, [events, vessels, flights, activeLayers, hoveredEventId, setSelectedEvent, setHoveredEventId, openIntelDrawer])
 
+  const isError = (hasEventLayers && eventsError) ||
+    (activeLayers.has('shipping') && vesselsError) ||
+    (activeLayers.has('flights') && flightsError)
+
   return {
     layers,
-    isLoading:
+    isLoading: !isError && (
       (hasEventLayers && eventsLoading) ||
       (activeLayers.has('shipping') && vesselsLoading) ||
-      (activeLayers.has('flights') && flightsLoading),
+      (activeLayers.has('flights') && flightsLoading)
+    ),
+    isError,
   }
 }
