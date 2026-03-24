@@ -168,6 +168,7 @@ export function FilterSidebar() {
                         <Switch
                           checked={active}
                           className="h-3.5 w-6 data-[state=checked]:bg-[var(--obs-teal)]"
+                          onClick={(e) => e.stopPropagation()}
                           onCheckedChange={() => toggleLayer(layer.id as LayerId)}
                         />
                       </div>
