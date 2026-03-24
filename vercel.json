@@ -1,0 +1,31 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/news",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/weather",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/markets",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/flights",
+      "schedule": "*/2 * * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    }
+  ]
+}
