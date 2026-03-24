@@ -38,7 +38,7 @@ export function SideNav() {
     <motion.aside
       animate={{ width: sidebarCollapsed ? 56 : 200 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="flex-shrink-0 flex flex-col bg-[var(--obs-surface)] border-r border-border/40 relative overflow-hidden"
+      className="hidden md:flex flex-shrink-0 flex-col bg-[var(--obs-surface)] border-r border-border/40 relative overflow-hidden"
     >
       {/* Logo area */}
       <div className={cn(

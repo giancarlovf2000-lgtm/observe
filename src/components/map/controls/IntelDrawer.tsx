@@ -15,6 +15,7 @@ import { useUIStore } from '@/store/uiStore'
 import { useQuery } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { AnyEvent } from '@/types'
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -37,6 +38,7 @@ async function fetchEventDetail(id: string) {
 export function IntelDrawer() {
   const { selectedEvent, setSelectedEvent } = useMapStore()
   const { intelDrawerOpen, closeIntelDrawer, intelTab, setIntelTab } = useUIStore()
+  const isMobile = useIsMobile()
 
   const { data: eventDetail, isLoading } = useQuery({
     queryKey: ['event-detail', selectedEvent?.id],
@@ -56,12 +58,24 @@ export function IntelDrawer() {
     <AnimatePresence>
       {intelDrawerOpen && event && (
         <motion.div
-          initial={{ x: '100%', opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          exit={{ x: '100%', opacity: 0 }}
+          initial={isMobile ? { y: '100%', opacity: 1 } : { x: '100%', opacity: 0 }}
+          animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+          exit={isMobile ? { y: '100%', opacity: 1 } : { x: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="w-[380px] max-w-[90vw] h-full bg-[var(--obs-surface)] border-l border-border/40 flex flex-col flex-shrink-0 z-20"
+          className={cn(
+            'bg-[var(--obs-surface)] flex flex-col z-20',
+            isMobile
+              ? 'fixed inset-x-0 bottom-0 rounded-t-2xl border-t border-border/40'
+              : 'w-[380px] max-w-[90vw] h-full border-l border-border/40 flex-shrink-0',
+          )}
+          style={isMobile ? { maxHeight: '85vh', paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' } : {}}
         >
+          {/* Mobile drag handle */}
+          {isMobile && (
+            <div className="flex justify-center pt-2.5 pb-1 flex-shrink-0">
+              <div className="w-10 h-1 rounded-full bg-white/15" />
+            </div>
+          )}
           {/* Header */}
           <div className="flex items-start gap-3 p-4 border-b border-border/40">
             <div className="flex-1 min-w-0">

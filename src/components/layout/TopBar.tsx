@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, Bell, LogOut, User, Settings, ChevronDown } from 'lucide-react'
+import { Search, Bell, LogOut, Settings, ChevronDown, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -43,17 +43,28 @@ export function TopBar() {
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-border/40 bg-[var(--obs-surface)] flex-shrink-0">
-      {/* Left: Live indicator */}
+      {/* Left: Logo on mobile, live indicator on desktop */}
       <div className="flex items-center gap-3">
-        <PulseIndicator />
-        <span className="text-xs font-mono text-muted-foreground hidden sm:block">
-          LIVE FEED ACTIVE
-        </span>
-        <div className="hidden sm:flex items-center gap-2">
-          <div className="w-px h-4 bg-border/60" />
-          <span className="text-xs text-muted-foreground">
-            {clockStr}
+        {/* Mobile: OBSERVE logo (sidebar hidden on mobile) */}
+        <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
+          <div className="w-7 h-7 rounded-md bg-[var(--obs-teal)] flex items-center justify-center glow-teal">
+            <Globe className="w-4 h-4 text-background" />
+          </div>
+          <span className="font-bold text-sm tracking-wider uppercase text-foreground">OBSERVE</span>
+        </Link>
+
+        {/* Desktop: live feed indicator */}
+        <div className="hidden md:flex items-center gap-3">
+          <PulseIndicator />
+          <span className="text-xs font-mono text-muted-foreground hidden sm:block">
+            LIVE FEED ACTIVE
           </span>
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-px h-4 bg-border/60" />
+            <span className="text-xs text-muted-foreground">
+              {clockStr}
+            </span>
+          </div>
         </div>
       </div>
 

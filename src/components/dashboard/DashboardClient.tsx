@@ -147,27 +147,28 @@ export function DashboardClient({
       >
         <div>
           <h1 className="text-xl font-bold text-foreground">Command Center</h1>
-          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
             <PulseIndicator />
-            Live global situational awareness
-            <span className="font-mono">·</span>
-            <span className="font-mono text-xs">{clockStr}</span>
+            <span className="hidden sm:inline">Live global situational awareness</span>
+            <span className="sm:hidden text-xs">Live feed active</span>
+            <span className="font-mono hidden sm:inline">·</span>
+            <span className="font-mono text-xs hidden sm:inline">{clockStr}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
             disabled={isPending}
-            className="border-border/50 text-muted-foreground hover:text-foreground"
+            className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5"
           >
-            <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', isPending && 'animate-spin')} />
-            {isPending ? 'Refreshing…' : 'Refresh'}
+            <RefreshCw className={cn('w-3.5 h-3.5 sm:mr-1.5', isPending && 'animate-spin')} />
+            <span className="hidden sm:inline">{isPending ? 'Refreshing…' : 'Refresh'}</span>
           </Button>
-          <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90')}>
-            <Map className="w-4 h-4 mr-2" />
-            Open World Map
+          <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90 h-8 px-3 text-xs sm:text-sm sm:px-4')}>
+            <Map className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Open World Map</span>
           </Link>
         </div>
       </motion.div>

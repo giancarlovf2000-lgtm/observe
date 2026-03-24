@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TopBar } from '@/components/layout/TopBar'
 import { SideNav } from '@/components/layout/SideNav'
+import { MobileNav } from '@/components/layout/MobileNav'
 import { CommandSearch } from '@/components/map/controls/CommandSearch'
 
 export default async function PlatformLayout({
@@ -21,11 +22,12 @@ export default async function PlatformLayout({
       <SideNav />
       <div className="flex-1 flex flex-col min-w-0">
         <TopBar />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pb-16 md:pb-0">
           {children}
         </main>
       </div>
       <CommandSearch />
+      <MobileNav />
     </div>
   )
 }
