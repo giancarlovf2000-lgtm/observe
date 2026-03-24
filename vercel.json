@@ -2,19 +2,19 @@
   "crons": [
     {
       "path": "/api/cron/news",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 */6 * * *"
     },
     {
       "path": "/api/cron/weather",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 */8 * * *"
     },
     {
       "path": "/api/cron/markets",
-      "schedule": "* * * * *"
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/flights",
-      "schedule": "*/2 * * * *"
+      "schedule": "0 */2 * * *"
     }
   ],
   "headers": [
