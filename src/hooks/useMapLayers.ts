@@ -2,12 +2,11 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ScatterplotLayer, IconLayer } from '@deck.gl/layers'
-import { createClient } from '@/lib/supabase/client'
+import { ScatterplotLayer } from '@deck.gl/layers'
 import { useFilterStore } from '@/store/filterStore'
 import { useMapStore } from '@/store/mapStore'
 import { useUIStore } from '@/store/uiStore'
-import { SEVERITY_COLORS, EVENT_TYPE_COLORS } from '@/lib/map/styleConfig'
+import { SEVERITY_COLORS } from '@/lib/map/styleConfig'
 import type { SeverityLevel, EventType } from '@/types'
 
 interface EventPoint {
@@ -21,75 +20,51 @@ interface EventPoint {
   occurred_at: string
 }
 
-// Fetch events for map rendering (minimal fields for performance)
-async function fetchMapEvents(activeLayers: Set<string>, dateHours: number) {
-  const supabase = createClient()
-  const cutoff = new Date(Date.now() - dateHours * 60 * 60 * 1000).toISOString()
+// Map layer IDs → event types
+const TYPE_MAP: Record<string, EventType> = {
+  conflicts: 'conflict',
+  news: 'news',
+  weather: 'weather',
+  disasters: 'weather',
+  markets: 'market',
+  political: 'political',
+}
 
-  // Map layer IDs to event types
-  const typeMap: Record<string, EventType> = {
-    conflicts: 'conflict',
-    news: 'news',
-    weather: 'weather',
-    disasters: 'weather',
-    markets: 'market',
-    political: 'political',
-  }
-
-  const activeTypes = [...activeLayers]
-    .map((lid) => typeMap[lid])
-    .filter(Boolean) as EventType[]
-
+async function fetchMapEvents(activeLayers: Set<string>, dateHours: number): Promise<EventPoint[]> {
+  const activeTypes = [...new Set(
+    [...activeLayers].map((lid) => TYPE_MAP[lid]).filter(Boolean) as EventType[]
+  )]
   if (activeTypes.length === 0) return []
 
-  const { data, error } = await supabase
-    .from('global_events')
-    .select('id, type, title, severity, country_id, lat, lng, occurred_at')
-    .in('type', [...new Set(activeTypes)])  // dedupe (weather+disasters both → weather)
-    .eq('is_active', true)
-    .gte('occurred_at', cutoff)
-    .not('lat', 'is', null)
-    .not('lng', 'is', null)
-    .order('occurred_at', { ascending: false })
-    .limit(500)
-
-  if (error) throw new Error(error.message)
-
-  return (data ?? []).filter(
-    (e): e is EventPoint =>
-      e.lat !== null &&
-      e.lng !== null &&
-      typeof e.lat === 'number' &&
-      typeof e.lng === 'number'
-  )
+  const params = new URLSearchParams({
+    types: activeTypes.join(','),
+    hours: String(dateHours),
+  })
+  const res = await fetch(`/api/map/events?${params}`, { cache: 'no-store' })
+  if (!res.ok) throw new Error(`events fetch failed: ${res.status}`)
+  return res.json()
 }
 
 async function fetchVessels() {
-  const supabase = createClient()
-  const { data } = await supabase
-    .from('vessels')
-    .select('id, lat, lng, name, vessel_type, flag, speed_kts')
-    .limit(200)
-  return data ?? []
+  const res = await fetch('/api/map/vessels', { cache: 'no-store' })
+  if (!res.ok) throw new Error(`vessels fetch failed: ${res.status}`)
+  return res.json()
 }
 
 async function fetchFlights() {
-  const supabase = createClient()
-  const { data } = await supabase
-    .from('flight_tracks')
-    .select('id, lat, lng, callsign, altitude_ft, speed_kts, on_ground')
-    .eq('on_ground', false)
-    .limit(300)
-  return data ?? []
+  const res = await fetch('/api/map/flights', { cache: 'no-store' })
+  if (!res.ok) throw new Error(`flights fetch failed: ${res.status}`)
+  return res.json()
 }
 
 export function useMapLayers() {
   const rawActiveLayers = useFilterStore((s) => s.activeLayers)
   const dateHours = useFilterStore((s) => s.dateHours)
-  // Defensive: ensure activeLayers is always a Set regardless of persist hydration
+
+  // Defensive: always ensure a proper Set regardless of persist hydration edge cases
   const activeLayers: Set<string> = rawActiveLayers instanceof Set
     ? rawActiveLayers
-    : new Set<string>(Array.isArray(rawActiveLayers) ? rawActiveLayers : [])
+    : new Set<string>(Array.isArray(rawActiveLayers) ? rawActiveLayers as string[] : [])
 
   const { setSelectedEvent, hoveredEventId, setHoveredEventId } = useMapStore()
   const { openIntelDrawer } = useUIStore()
@@ -103,7 +78,8 @@ export function useMapLayers() {
     queryFn: () => fetchMapEvents(activeLayers, dateHours),
     enabled: hasEventLayers,
     refetchInterval: 60_000,
-    retry: 2,
+    staleTime: 30_000,
+    retry: 1,
   })
 
   const { data: vessels = [], isLoading: vesselsLoading, isError: vesselsError } = useQuery({
@@ -111,7 +87,8 @@ export function useMapLayers() {
     queryFn: fetchVessels,
     enabled: activeLayers.has('shipping'),
     refetchInterval: 30_000,
-    retry: 2,
+    staleTime: 15_000,
+    retry: 1,
   })
 
   const { data: flights = [], isLoading: flightsLoading, isError: flightsError } = useQuery({
@@ -119,13 +96,14 @@ export function useMapLayers() {
     queryFn: fetchFlights,
     enabled: activeLayers.has('flights'),
     refetchInterval: 30_000,
-    retry: 2,
+    staleTime: 15_000,
+    retry: 1,
   })
 
   const layers = useMemo(() => {
     const result = []
 
-    // --- Conflicts + Political: ScatterplotLayer with pulsing effect ---
+    // --- Conflicts + Political ---
     const conflictEvents = events.filter(
       (e) => e.type === 'conflict' || e.type === 'political'
     )
@@ -136,7 +114,7 @@ export function useMapLayers() {
           data: conflictEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: (d: EventPoint) => {
-            const sizes = { minimal: 40000, low: 55000, moderate: 75000, high: 100000, critical: 140000 }
+            const sizes: Record<string, number> = { minimal: 40000, low: 55000, moderate: 75000, high: 100000, critical: 140000 }
             return sizes[d.severity] ?? 60000
           },
           getFillColor: (d: EventPoint) => {
@@ -153,7 +131,7 @@ export function useMapLayers() {
           data: conflictEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: (d: EventPoint) => {
-            const sizes = { minimal: 15000, low: 20000, moderate: 28000, high: 36000, critical: 45000 }
+            const sizes: Record<string, number> = { minimal: 15000, low: 20000, moderate: 28000, high: 36000, critical: 45000 }
             return sizes[d.severity] ?? 20000
           },
           getFillColor: (d: EventPoint) => {
@@ -161,15 +139,15 @@ export function useMapLayers() {
             const isHovered = d.id === hoveredEventId
             return [c[0], c[1], c[2], isHovered ? 255 : c[3]] as [number, number, number, number]
           },
-          getLineColor: [255, 255, 255, 60],
+          getLineColor: [255, 255, 255, 60] as [number, number, number, number],
           stroked: true,
           lineWidthMinPixels: 1,
           radiusUnits: 'meters',
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60],
-          onHover: (info) => setHoveredEventId(info.object?.id ?? null),
-          onClick: (info) => {
+          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          onHover: (info: { object?: EventPoint }) => setHoveredEventId(info.object?.id ?? null),
+          onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
               openIntelDrawer()
@@ -180,7 +158,7 @@ export function useMapLayers() {
       )
     }
 
-    // --- News: ScatterplotLayer orange (replaced HeatmapLayer — avoids WebGPU probe) ---
+    // --- News ---
     const newsEvents = events.filter((e) => e.type === 'news')
     if (newsEvents.length > 0 && activeLayers.has('news')) {
       result.push(
@@ -189,10 +167,10 @@ export function useMapLayers() {
           data: newsEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: (d: EventPoint) => {
-            const sizes = { minimal: 30000, low: 45000, moderate: 65000, high: 90000, critical: 120000 }
+            const sizes: Record<string, number> = { minimal: 30000, low: 45000, moderate: 65000, high: 90000, critical: 120000 }
             return sizes[d.severity] ?? 45000
           },
-          getFillColor: [249, 115, 22, 25],
+          getFillColor: [249, 115, 22, 25] as [number, number, number, number],
           stroked: false,
           radiusUnits: 'meters',
           pickable: false,
@@ -202,18 +180,18 @@ export function useMapLayers() {
           data: newsEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: (d: EventPoint) => {
-            const sizes = { minimal: 10000, low: 14000, moderate: 20000, high: 28000, critical: 36000 }
+            const sizes: Record<string, number> = { minimal: 10000, low: 14000, moderate: 20000, high: 28000, critical: 36000 }
             return sizes[d.severity] ?? 14000
           },
-          getFillColor: [249, 115, 22, 200],
-          getLineColor: [253, 186, 116, 120],
+          getFillColor: [249, 115, 22, 200] as [number, number, number, number],
+          getLineColor: [253, 186, 116, 120] as [number, number, number, number],
           stroked: true,
           lineWidthMinPixels: 1,
           radiusUnits: 'meters',
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60],
-          onClick: (info) => {
+          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
               openIntelDrawer()
@@ -223,7 +201,7 @@ export function useMapLayers() {
       )
     }
 
-    // --- Weather: ScatterplotLayer blue ---
+    // --- Weather / Disasters ---
     const weatherEvents = events.filter((e) => e.type === 'weather')
     if (weatherEvents.length > 0 && (activeLayers.has('weather') || activeLayers.has('disasters'))) {
       result.push(
@@ -232,18 +210,18 @@ export function useMapLayers() {
           data: weatherEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: (d: EventPoint) => {
-            const sizes = { minimal: 20000, low: 35000, moderate: 60000, high: 90000, critical: 120000 }
+            const sizes: Record<string, number> = { minimal: 20000, low: 35000, moderate: 60000, high: 90000, critical: 120000 }
             return sizes[d.severity] ?? 40000
           },
-          getFillColor: [59, 130, 246, 180],
-          getLineColor: [147, 197, 253, 150],
+          getFillColor: [59, 130, 246, 180] as [number, number, number, number],
+          getLineColor: [147, 197, 253, 150] as [number, number, number, number],
           stroked: true,
           lineWidthMinPixels: 1.5,
           radiusUnits: 'meters',
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60],
-          onClick: (info) => {
+          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
               openIntelDrawer()
@@ -253,7 +231,7 @@ export function useMapLayers() {
       )
     }
 
-    // --- Markets: ScatterplotLayer gold ---
+    // --- Markets ---
     const marketEvents = events.filter((e) => e.type === 'market')
     if (marketEvents.length > 0 && activeLayers.has('markets')) {
       result.push(
@@ -262,14 +240,14 @@ export function useMapLayers() {
           data: marketEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: 30000,
-          getFillColor: [234, 179, 8, 200],
-          getLineColor: [253, 224, 71, 180],
+          getFillColor: [234, 179, 8, 200] as [number, number, number, number],
+          getLineColor: [253, 224, 71, 180] as [number, number, number, number],
           stroked: true,
           lineWidthMinPixels: 1,
           radiusUnits: 'meters',
           pickable: true,
           autoHighlight: true,
-          onClick: (info) => {
+          onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
               openIntelDrawer()
@@ -279,32 +257,32 @@ export function useMapLayers() {
       )
     }
 
-    // --- Shipping vessels: ScatterplotLayer cyan ---
+    // --- Vessels ---
     if (vessels.length > 0 && activeLayers.has('shipping')) {
       result.push(
         new ScatterplotLayer({
           id: 'vessels',
           data: vessels,
-          getPosition: (d: typeof vessels[0]) => [d.lng, d.lat],
+          getPosition: (d: { lng: number; lat: number }) => [d.lng, d.lat],
           getRadius: 8000,
-          getFillColor: [6, 182, 212, 200],
+          getFillColor: [6, 182, 212, 200] as [number, number, number, number],
           radiusUnits: 'meters',
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 80],
+          highlightColor: [255, 255, 255, 80] as [number, number, number, number],
         })
       )
     }
 
-    // --- Flights: tiny cyan dots ---
+    // --- Flights ---
     if (flights.length > 0 && activeLayers.has('flights')) {
       result.push(
         new ScatterplotLayer({
           id: 'flights',
           data: flights,
-          getPosition: (d: typeof flights[0]) => [d.lng, d.lat],
+          getPosition: (d: { lng: number; lat: number }) => [d.lng, d.lat],
           getRadius: 4000,
-          getFillColor: [34, 211, 238, 180],
+          getFillColor: [34, 211, 238, 180] as [number, number, number, number],
           radiusUnits: 'meters',
           pickable: true,
         })
@@ -314,9 +292,11 @@ export function useMapLayers() {
     return result
   }, [events, vessels, flights, activeLayers, hoveredEventId, setSelectedEvent, setHoveredEventId, openIntelDrawer])
 
-  const isError = (hasEventLayers && eventsError) ||
+  const isError = Boolean(
+    (hasEventLayers && eventsError) ||
     (activeLayers.has('shipping') && vesselsError) ||
     (activeLayers.has('flights') && flightsError)
+  )
 
   return {
     layers,
