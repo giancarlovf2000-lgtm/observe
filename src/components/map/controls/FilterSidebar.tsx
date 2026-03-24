@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Filter, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useFilterStore, type LayerId } from '@/store/filterStore'
+import { useFilterStore, type LayerId, DEFAULT_ACTIVE } from '@/store/filterStore'
 import { LAYER_CONFIGS, LAYER_CATEGORIES } from '@/lib/map/layerConfig'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -44,9 +44,14 @@ const SEVERITY_OPTIONS = [
 
 export function FilterSidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { activeLayers, toggleLayer, isLayerActive, dateHours, setDateHours, severityMin, setSeverityMin } = useFilterStore()
 
-  const activeCount = activeLayers.size
+  useEffect(() => { setMounted(true) }, [])
+
+  // Use persisted state after mount; default state during SSR to avoid hydration mismatch
+  const isActive = (id: LayerId) => mounted ? isLayerActive(id) : DEFAULT_ACTIVE.includes(id)
+  const activeCount = mounted ? activeLayers.size : DEFAULT_ACTIVE.length
 
   return (
     <motion.div
@@ -137,7 +142,7 @@ export function FilterSidebar() {
                 <div className="space-y-0.5">
                   {layers.map((layer) => {
                     const Icon = ICON_MAP[layer.icon] || Filter
-                    const active = isLayerActive(layer.id as LayerId)
+                    const active = isActive(layer.id as LayerId)
                     return (
                       <div
                         key={layer.id}

@@ -45,7 +45,7 @@ interface FilterStore {
   toggleShowOnlyWatchlist: () => void
 }
 
-const DEFAULT_ACTIVE: LayerId[] = ['conflicts', 'news', 'weather', 'disasters']
+export const DEFAULT_ACTIVE: LayerId[] = ['conflicts', 'news', 'weather', 'disasters']
 
 export const useFilterStore = create<FilterStore>()(
   subscribeWithSelector(

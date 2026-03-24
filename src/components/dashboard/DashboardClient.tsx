@@ -12,6 +12,7 @@ import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
+import { useEffect, useState } from 'react'
 import type { SeverityLevel } from '@/types'
 
 interface DashboardEvent {
@@ -116,6 +117,13 @@ export function DashboardClient({
 }: DashboardClientProps) {
   const criticalCount = recentEvents.filter(e => e.severity === 'critical').length
   const newsCount = recentEvents.filter(e => e.type === 'news').length
+  const [clockStr, setClockStr] = useState('')
+  useEffect(() => {
+    const tick = () => setClockStr(new Date().toUTCString().slice(0, 25))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [])
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-6">
@@ -131,7 +139,7 @@ export function DashboardClient({
             <PulseIndicator />
             Live global situational awareness
             <span className="font-mono">·</span>
-            <span className="font-mono text-xs">{new Date().toUTCString().slice(0, 25)}</span>
+            <span className="font-mono text-xs">{clockStr}</span>
           </div>
         </div>
         <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90')}>
