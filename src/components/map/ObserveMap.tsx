@@ -4,6 +4,7 @@ import { useRef, useCallback, useEffect } from 'react'
 import Map, { NavigationControl, ScaleControl, type MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { DeckGL } from '@deck.gl/react'
+import { webgl2Adapter } from '@luma.gl/webgl'
 import type { MapViewState } from '@/types/map'
 import { MAP_STYLES } from '@/lib/map/styleConfig'
 import { useMapStore } from '@/store/mapStore'
@@ -46,7 +47,7 @@ export function ObserveMap() {
         onViewStateChange={handleViewStateChange as never}
         controller={true}
         layers={layers}
-        deviceProps={{ type: 'webgl' }}
+        deviceProps={{ type: 'webgl', adapters: [webgl2Adapter] }}
         getCursor={({ isDragging, isHovering }) =>
           isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'
         }
