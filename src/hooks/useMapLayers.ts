@@ -86,10 +86,15 @@ export function useMapLayers() {
   const { setSelectedEvent, hoveredEventId, setHoveredEventId } = useMapStore()
   const { openIntelDrawer } = useUIStore()
 
+  const hasEventLayers = activeLayers.has('conflicts') || activeLayers.has('news') ||
+    activeLayers.has('weather') || activeLayers.has('disasters') ||
+    activeLayers.has('markets') || activeLayers.has('political')
+
   const { data: events = [], isLoading: eventsLoading } = useQuery({
     queryKey: ['map-events', [...activeLayers].sort().join(','), dateHours],
     queryFn: () => fetchMapEvents(activeLayers, dateHours),
-    refetchInterval: 60_000, // refresh every minute
+    enabled: hasEventLayers,
+    refetchInterval: 60_000,
   })
 
   const { data: vessels = [], isLoading: vesselsLoading } = useQuery({
@@ -300,6 +305,9 @@ export function useMapLayers() {
 
   return {
     layers,
-    isLoading: eventsLoading || (activeLayers.has('shipping') && vesselsLoading),
+    isLoading:
+      (hasEventLayers && eventsLoading) ||
+      (activeLayers.has('shipping') && vesselsLoading) ||
+      (activeLayers.has('flights') && flightsLoading),
   }
 }
