@@ -3,7 +3,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { ScatterplotLayer, IconLayer } from '@deck.gl/layers'
-import { HeatmapLayer } from '@deck.gl/aggregation-layers'
 import { createClient } from '@/lib/supabase/client'
 import { useFilterStore } from '@/store/filterStore'
 import { useMapStore } from '@/store/mapStore'
@@ -165,28 +164,45 @@ export function useMapLayers() {
       )
     }
 
-    // --- News: HeatmapLayer ---
+    // --- News: ScatterplotLayer orange (replaced HeatmapLayer — avoids WebGPU probe) ---
     const newsEvents = events.filter((e) => e.type === 'news')
     if (newsEvents.length > 0 && activeLayers.has('news')) {
       result.push(
-        new HeatmapLayer({
-          id: 'news-heatmap',
+        new ScatterplotLayer({
+          id: 'news-glow',
           data: newsEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
-          getWeight: (d: EventPoint) => {
-            const weights = { minimal: 1, low: 2, moderate: 4, high: 7, critical: 10 }
-            return weights[d.severity] ?? 2
+          getRadius: (d: EventPoint) => {
+            const sizes = { minimal: 30000, low: 45000, moderate: 65000, high: 90000, critical: 120000 }
+            return sizes[d.severity] ?? 45000
           },
-          radiusPixels: 50,
-          intensity: 1.5,
-          threshold: 0.05,
-          colorRange: [
-            [255, 165, 0, 0],
-            [255, 165, 0, 80],
-            [255, 130, 0, 150],
-            [239, 68, 68, 180],
-            [220, 38, 38, 220],
-          ],
+          getFillColor: [249, 115, 22, 25],
+          stroked: false,
+          radiusUnits: 'meters',
+          pickable: false,
+        }),
+        new ScatterplotLayer({
+          id: 'news-dots',
+          data: newsEvents,
+          getPosition: (d: EventPoint) => [d.lng, d.lat],
+          getRadius: (d: EventPoint) => {
+            const sizes = { minimal: 10000, low: 14000, moderate: 20000, high: 28000, critical: 36000 }
+            return sizes[d.severity] ?? 14000
+          },
+          getFillColor: [249, 115, 22, 200],
+          getLineColor: [253, 186, 116, 120],
+          stroked: true,
+          lineWidthMinPixels: 1,
+          radiusUnits: 'meters',
+          pickable: true,
+          autoHighlight: true,
+          highlightColor: [255, 255, 255, 60],
+          onClick: (info) => {
+            if (info.object) {
+              setSelectedEvent(info.object as never)
+              openIntelDrawer()
+            }
+          },
         })
       )
     }
