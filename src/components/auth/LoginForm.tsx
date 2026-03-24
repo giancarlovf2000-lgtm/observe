@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -21,7 +20,6 @@ const loginSchema = z.object({
 type LoginInput = z.infer<typeof loginSchema>
 
 export function LoginForm() {
-  const router = useRouter()
   const [error, setError] = useState<string | null>(null)
 
   const {
@@ -52,8 +50,7 @@ export function LoginForm() {
       return
     }
 
-    router.push('/dashboard')
-    router.refresh()
+    window.location.href = '/dashboard'
   }
 
   return (
