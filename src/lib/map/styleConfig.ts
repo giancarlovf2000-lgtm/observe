@@ -1,8 +1,12 @@
 // MapLibre GL JS style configuration
 // Uses MapTiler's dark style (free tier) — swap with any compatible style
 
+function isValidKey(key?: string | null): key is string {
+  return !!key && !key.startsWith('your_') && key.length > 10
+}
+
 export function getMapStyle(key?: string | null): string {
-  if (key) {
+  if (isValidKey(key)) {
     return `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
   }
   // Fallback: use a free public style (no API key required)
@@ -13,15 +17,15 @@ export function getMapStyle(key?: string | null): string {
 // Alternative styles
 export const MAP_STYLES = {
   dark: (key?: string) =>
-    key
+    isValidKey(key)
       ? `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
       : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
   satellite: (key?: string) =>
-    key
+    isValidKey(key)
       ? `https://api.maptiler.com/maps/satellite/style.json?key=${key}`
       : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
   terrain: (key?: string) =>
-    key
+    isValidKey(key)
       ? `https://api.maptiler.com/maps/outdoor/style.json?key=${key}`
       : 'https://tiles.stadiamaps.com/styles/alidade_smooth_dark.json',
 }

@@ -127,12 +127,12 @@ export function DashboardClient({
       >
         <div>
           <h1 className="text-xl font-bold text-foreground">Command Center</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
             <PulseIndicator />
             Live global situational awareness
             <span className="font-mono">·</span>
             <span className="font-mono text-xs">{new Date().toUTCString().slice(0, 25)}</span>
-          </p>
+          </div>
         </div>
         <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90')}>
           <Map className="w-4 h-4 mr-2" />
