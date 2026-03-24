@@ -46,6 +46,7 @@ export function ObserveMap() {
         onViewStateChange={handleViewStateChange as never}
         controller={true}
         layers={layers}
+        deviceProps={{ type: 'webgl' }}
         getCursor={({ isDragging, isHovering }) =>
           isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'
         }
