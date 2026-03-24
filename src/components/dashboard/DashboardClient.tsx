@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   ArrowRight, Sword, CloudLightning, Newspaper, Bell,
-  TrendingUp, Globe2, Map, Brain, Clock, AlertTriangle
+  TrendingUp, Globe2, Map, Brain, Clock, AlertTriangle, RefreshCw
 } from 'lucide-react'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -12,7 +12,8 @@ import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import type { SeverityLevel } from '@/types'
 
 interface DashboardEvent {
@@ -118,12 +119,23 @@ export function DashboardClient({
   const criticalCount = recentEvents.filter(e => e.severity === 'critical').length
   const newsCount = recentEvents.filter(e => e.type === 'news').length
   const [clockStr, setClockStr] = useState('')
+  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
+  const [isPending, startTransition] = useTransition()
+  const router = useRouter()
+
   useEffect(() => {
     const tick = () => setClockStr(new Date().toUTCString().slice(0, 25))
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [])
+
+  function handleRefresh() {
+    startTransition(() => {
+      router.refresh()
+      setLastRefreshed(new Date())
+    })
+  }
 
   return (
     <div className="p-6 max-w-[1400px] mx-auto space-y-6">
@@ -142,10 +154,22 @@ export function DashboardClient({
             <span className="font-mono text-xs">{clockStr}</span>
           </div>
         </div>
-        <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90')}>
-          <Map className="w-4 h-4 mr-2" />
-          Open World Map
-        </Link>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isPending}
+            className="border-border/50 text-muted-foreground hover:text-foreground"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5 mr-1.5', isPending && 'animate-spin')} />
+            {isPending ? 'Refreshing…' : 'Refresh'}
+          </Button>
+          <Link href="/map" className={cn(buttonVariants(), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90')}>
+            <Map className="w-4 h-4 mr-2" />
+            Open World Map
+          </Link>
+        </div>
       </motion.div>
 
       {/* Stats row */}
@@ -188,6 +212,11 @@ export function DashboardClient({
           href="/news"
         />
       </motion.div>
+
+      {/* Last refreshed */}
+      <div className="text-xs text-muted-foreground/50 font-mono -mt-2">
+        Last updated {formatDistanceToNow(lastRefreshed, { addSuffix: true })}
+      </div>
 
       {/* Main content: events + briefing */}
       <div className="grid lg:grid-cols-3 gap-6">
