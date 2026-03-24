@@ -8,6 +8,15 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
 
+interface PriceTick {
+  price: number
+  change_24h: number
+  change_pct: number
+  volume_24h: number
+  market_cap: number
+  tick_at: string
+}
+
 interface MarketAsset {
   id: string
   symbol: string
@@ -15,6 +24,7 @@ interface MarketAsset {
   asset_class: string
   country_id: string | null
   is_active: boolean
+  latest_price?: PriceTick | null
 }
 
 interface MarketEvent {
@@ -43,20 +53,16 @@ const ASSET_CLASS_COLORS = {
   equity: 'var(--obs-purple)',
 }
 
-// Demo price data — in production these come from the price_ticks table
-const DEMO_PRICES: Record<string, { price: string; change: number }> = {
-  'BTC': { price: '$67,420', change: 2.4 },
-  'ETH': { price: '$3,812', change: 1.8 },
-  'XRP': { price: '$0.58', change: -0.9 },
-  'SOL': { price: '$175', change: 4.2 },
-  'USD/EUR': { price: '0.9182', change: -0.3 },
-  'USD/GBP': { price: '0.7841', change: 0.1 },
-  'USD/JPY': { price: '149.82', change: -0.5 },
-  'USD/RUB': { price: '89.45', change: 0.8 },
-  'GOLD': { price: '$2,341', change: 0.6 },
-  'OIL_WTI': { price: '$81.20', change: 3.2 },
-  'OIL_BRENT': { price: '$85.40', change: 2.9 },
-  'WHEAT': { price: '$548', change: -1.2 },
+function formatPrice(symbol: string, price: number): string {
+  const cryptoSymbols = ['BTC','ETH','XRP','SOL','BNB','USDT']
+  const isCrypto = cryptoSymbols.includes(symbol)
+  const isCurrency = symbol.includes('/')
+  const isCommodity = ['GOLD','OIL_WTI','OIL_BRENT'].includes(symbol)
+  if (isCurrency) return price.toFixed(4)
+  if (isCrypto && price < 10) return `$${price.toFixed(4)}`
+  if (isCrypto) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
+  if (isCommodity) return `$${price.toFixed(2)}`
+  return `$${price.toFixed(2)}`
 }
 
 export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[]; marketEvents: MarketEvent[] }) {
@@ -114,23 +120,23 @@ export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[];
               </div>
               <div className="divide-y divide-border/20">
                 {classAssets.map((asset) => {
-                  const demo = DEMO_PRICES[asset.symbol]
-                  const isPositive = (demo?.change ?? 0) >= 0
+                  const tick = asset.latest_price
+                  const isPositive = (tick?.change_pct ?? 0) >= 0
                   return (
                     <div key={asset.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-white/3 transition-colors">
                       <div>
                         <div className="text-sm font-medium text-foreground">{asset.symbol}</div>
                         <div className="text-xs text-muted-foreground">{asset.name}</div>
                       </div>
-                      {demo ? (
+                      {tick ? (
                         <div className="text-right">
-                          <div className="text-sm font-mono text-foreground">{demo.price}</div>
+                          <div className="text-sm font-mono text-foreground">{formatPrice(asset.symbol, tick.price)}</div>
                           <div className={cn(
                             'text-xs font-mono flex items-center gap-0.5',
                             isPositive ? 'text-green-400' : 'text-red-400'
                           )}>
                             {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                            {isPositive ? '+' : ''}{demo.change}%
+                            {isPositive ? '+' : ''}{tick.change_pct.toFixed(2)}%
                           </div>
                         </div>
                       ) : (
