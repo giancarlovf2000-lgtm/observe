@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Brain, Play, Clock, Globe2, Sword, TrendingUp, Map, Bookmark, Loader2 } from 'lucide-react'
+import { Brain, Play, Clock, Globe2, Sword, TrendingUp, Map, Bookmark, Loader2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useBriefingStream } from '@/hooks/useBriefingStream'
@@ -94,7 +94,7 @@ function BriefingRenderer({ content }: { content: string }) {
 
 function LiveBriefingPanel() {
   const [selectedType, setSelectedType] = useState<BriefingType>('world_daily')
-  const { content, generate, isLoading, isEmpty } = useBriefingStream({
+  const { content, generate, isLoading, isEmpty, error } = useBriefingStream({
     type: selectedType,
   })
 
@@ -140,7 +140,16 @@ function LiveBriefingPanel() {
 
       {/* Content area */}
       <div className="p-5 min-h-[200px]">
-        {isEmpty && !isLoading && (
+        {error && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 mb-4">
+            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-400">Generation failed</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{error.message}</p>
+            </div>
+          </div>
+        )}
+        {isEmpty && !isLoading && !error && (
           <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
             <Brain className="w-10 h-10 opacity-20 mb-3" />
             <p className="text-sm">Select a briefing type and click Generate</p>

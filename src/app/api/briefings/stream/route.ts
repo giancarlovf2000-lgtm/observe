@@ -30,21 +30,30 @@ export async function POST(req: Request) {
 
   const perplexity = getPerplexity()
 
-  const result = await streamText({
-    // sonar-pro: 70B model with real-time web search
-    model: perplexity('sonar-pro'),
-    system: SYSTEM_PROMPTS[type as BriefingType],
-    messages: [
-      {
-        role: 'user',
-        content: buildBriefingPrompt(type, context),
-      },
-    ],
-    maxOutputTokens: 2000,
-    temperature: 0.4,
-  })
+  try {
+    const result = await streamText({
+      // sonar-pro: 70B model with real-time web search
+      model: perplexity('sonar-pro'),
+      system: SYSTEM_PROMPTS[type as BriefingType],
+      messages: [
+        {
+          role: 'user',
+          content: buildBriefingPrompt(type, context),
+        },
+      ],
+      maxOutputTokens: 2000,
+      temperature: 0.4,
+    })
 
-  return result.toTextStreamResponse()
+    return result.toTextStreamResponse()
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[briefings/stream] streamText error:', msg)
+    return new Response(
+      JSON.stringify({ error: `AI generation failed: ${msg}` }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
 }
 
 function getDemoContent(type: string): string {

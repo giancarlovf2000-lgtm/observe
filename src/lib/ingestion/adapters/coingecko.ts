@@ -35,7 +35,9 @@ export class CoinGeckoAdapter extends BaseAdapter {
       metadata: {
         event_type: 'market',
         asset_type: 'price_tick',
+        asset_class: 'crypto',
         symbol: coin.symbol.toUpperCase(),
+        name: coin.name,
         price: coin.current_price,
         change_pct: coin.price_change_percentage_24h,
         volume: coin.total_volume,

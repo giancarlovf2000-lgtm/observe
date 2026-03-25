@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { normalize } from './normalizer'
 import { filterNew } from './deduplicator'
 import type { BaseAdapter } from './adapters/base'
-import type { Json, IngestionStatus } from '@/types/database'
+import type { Json, IngestionStatus, AssetClass } from '@/types/database'
 
 interface PipelineResult {
   fetched: number
@@ -80,25 +80,42 @@ export async function runIngestionPipeline(
     if (priceEvents.length > 0) {
       for (const event of priceEvents) {
         if (!event.price_tick_data) continue
-        // Look up or create the asset
-        const { data: asset } = await supabase
+        const meta = event.metadata ?? {}
+        const symbol = event.price_tick_data.symbol
+        const VALID_CLASSES: AssetClass[] = ['currency', 'crypto', 'commodity', 'index', 'equity']
+        const rawClass = String(meta.asset_class ?? (symbol.includes('/') ? 'currency' : 'crypto'))
+        const assetClass: AssetClass = VALID_CLASSES.includes(rawClass as AssetClass)
+          ? (rawClass as AssetClass)
+          : 'crypto'
+        const name = String(meta.name ?? meta.coin_id ?? symbol)
+
+        // Upsert the asset (creates on first run, updates on subsequent)
+        const { data: asset, error: upsertErr } = await supabase
           .from('market_assets')
+          .upsert(
+            { symbol, name, asset_class: assetClass, is_active: true },
+            { onConflict: 'symbol', ignoreDuplicates: false }
+          )
           .select('id')
-          .eq('symbol', event.price_tick_data.symbol)
           .single()
 
-        if (asset) {
-          await supabase.from('price_ticks').insert({
-            asset_id: asset.id,
-            price: event.price_tick_data.price,
-            change_pct: event.price_tick_data.change_pct,
-            volume_24h: event.price_tick_data.volume,
-            market_cap: event.price_tick_data.market_cap,
-            tick_at: event.occurred_at,
-          })
-          result.inserted++
+        if (upsertErr || !asset) {
+          result.errors.push(`Asset upsert ${symbol}: ${upsertErr?.message ?? 'no data'}`)
+          continue
+        }
+
+        const { error: tickErr } = await supabase.from('price_ticks').insert({
+          asset_id: asset.id,
+          price: event.price_tick_data.price,
+          change_pct: event.price_tick_data.change_pct,
+          volume_24h: event.price_tick_data.volume,
+          market_cap: event.price_tick_data.market_cap,
+          tick_at: event.occurred_at,
+        })
+        if (tickErr) {
+          result.errors.push(`Price tick ${symbol}: ${tickErr.message}`)
         } else {
-          result.skipped++
+          result.inserted++
         }
       }
     }
