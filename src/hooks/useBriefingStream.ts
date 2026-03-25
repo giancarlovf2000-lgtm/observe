@@ -1,6 +1,6 @@
 'use client'
 
-import { useCompletion } from '@ai-sdk/react'
+import { useState, useCallback } from 'react'
 import type { BriefingType } from '@/lib/ai/prompts'
 
 interface UseBriefingStreamOptions {
@@ -9,22 +9,51 @@ interface UseBriefingStreamOptions {
 }
 
 export function useBriefingStream({ type, context = {} }: UseBriefingStreamOptions) {
-  const { completion, complete, isLoading, error } = useCompletion({
-    api: '/api/briefings/stream',
-    streamProtocol: 'text',
-  })
+  const [content, setContent]     = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError]         = useState<Error | null>(null)
 
-  async function generate() {
-    await complete('', {
-      body: { type, context },
-    })
-  }
+  const generate = useCallback(async () => {
+    setIsLoading(true)
+    setContent('')
+    setError(null)
+
+    try {
+      const res = await fetch('/api/briefings/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, context }),
+      })
+
+      if (!res.ok) {
+        let msg = `HTTP ${res.status}`
+        try {
+          const j = await res.json()
+          msg = j.error ?? msg
+        } catch { /* ignore */ }
+        throw new Error(msg)
+      }
+
+      const reader  = res.body!.getReader()
+      const decoder = new TextDecoder()
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        setContent(prev => prev + decoder.decode(value, { stream: true }))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [type, context])
 
   return {
-    content: completion,
+    content,
     generate,
     isLoading,
     error,
-    isEmpty: !completion && !isLoading,
+    isEmpty: !content && !isLoading && !error,
   }
 }
