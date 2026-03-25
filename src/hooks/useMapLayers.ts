@@ -2,12 +2,13 @@
 
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ScatterplotLayer } from '@deck.gl/layers'
+import { ScatterplotLayer, ArcLayer, TextLayer } from '@deck.gl/layers'
 import { useFilterStore } from '@/store/filterStore'
 import { useMapStore } from '@/store/mapStore'
 import { useUIStore } from '@/store/uiStore'
 import { SEVERITY_COLORS } from '@/lib/map/styleConfig'
-import type { SeverityLevel, EventType } from '@/types'
+import { extractRelationships, extractEndpoints } from '@/lib/map/relationshipExtractor'
+import type { SeverityLevel, EventType, AnyEvent } from '@/types'
 
 interface EventPoint {
   id: string
@@ -28,6 +29,12 @@ const TYPE_MAP: Record<string, EventType> = {
   disasters: 'weather',
   markets: 'market',
   political: 'political',
+}
+
+async function fetchEventDetail(id: string): Promise<AnyEvent | null> {
+  const res = await fetch(`/api/events/${id}`, { cache: 'no-store' })
+  if (!res.ok) return null
+  return res.json()
 }
 
 async function fetchMapEvents(activeLayers: Set<string>, dateHours: number): Promise<EventPoint[]> {
@@ -66,8 +73,23 @@ export function useMapLayers() {
     ? rawActiveLayers
     : new Set<string>(Array.isArray(rawActiveLayers) ? rawActiveLayers as string[] : [])
 
-  const { setSelectedEvent, hoveredEventId, setHoveredEventId } = useMapStore()
+  const { selectedEvent, setSelectedEvent, hoveredEventId, setHoveredEventId } = useMapStore()
   const { openIntelDrawer } = useUIStore()
+
+  // Fetch full event detail when an event is selected (shares cache with IntelDrawer)
+  const { data: selectedEventDetail } = useQuery({
+    queryKey: ['event-detail', selectedEvent?.id],
+    queryFn: () => fetchEventDetail(selectedEvent!.id),
+    enabled: !!selectedEvent?.id,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Build relationship arcs for the selected event
+  const relationshipArcs = useMemo(() => {
+    const detail = selectedEventDetail ?? (selectedEvent as AnyEvent | null)
+    if (!detail) return []
+    return extractRelationships(detail)
+  }, [selectedEvent, selectedEventDetail])
 
   const hasEventLayers = activeLayers.has('conflicts') || activeLayers.has('news') ||
     activeLayers.has('weather') || activeLayers.has('disasters') ||
@@ -289,8 +311,103 @@ export function useMapLayers() {
       )
     }
 
+    // --- Relationship arcs (rendered on top of all event layers) ---
+    if (relationshipArcs.length > 0) {
+      const endpoints = extractEndpoints(relationshipArcs)
+
+      // Glow arcs — thick, low opacity
+      result.push(
+        new ArcLayer({
+          id: 'rel-arc-glow',
+          data: relationshipArcs,
+          getSourcePosition: (d) => d.sourcePosition,
+          getTargetPosition: (d) => d.targetPosition,
+          getSourceColor: (d) => [d.sourceColor[0], d.sourceColor[1], d.sourceColor[2], 35] as [number, number, number, number],
+          getTargetColor: (d) => [d.sourceColor[0], d.sourceColor[1], d.sourceColor[2], 0] as [number, number, number, number],
+          getWidth: 10,
+          getHeight: 0.4,
+          greatCircle: true,
+          pickable: false,
+          updateTriggers: { getSourceColor: [relationshipArcs], getTargetColor: [relationshipArcs] },
+        })
+      )
+
+      // Solid arcs — thin, vivid
+      result.push(
+        new ArcLayer({
+          id: 'rel-arc-solid',
+          data: relationshipArcs,
+          getSourcePosition: (d) => d.sourcePosition,
+          getTargetPosition: (d) => d.targetPosition,
+          getSourceColor: (d) => d.sourceColor,
+          getTargetColor: (d) => d.targetColor,
+          getWidth: 1.5,
+          getHeight: 0.4,
+          greatCircle: true,
+          pickable: false,
+          updateTriggers: { getSourceColor: [relationshipArcs], getTargetColor: [relationshipArcs] },
+        })
+      )
+
+      // Endpoint glow rings at target countries
+      result.push(
+        new ScatterplotLayer({
+          id: 'rel-endpoint-glow',
+          data: endpoints,
+          getPosition: (d) => d.position,
+          getRadius: 180000,
+          getFillColor: (d) => [d.color[0], d.color[1], d.color[2], 20] as [number, number, number, number],
+          stroked: true,
+          getLineColor: (d) => [d.color[0], d.color[1], d.color[2], 80] as [number, number, number, number],
+          lineWidthMinPixels: 1,
+          radiusUnits: 'meters',
+          pickable: false,
+          updateTriggers: { getFillColor: [endpoints], getLineColor: [endpoints] },
+        })
+      )
+
+      // Endpoint dots at target countries
+      result.push(
+        new ScatterplotLayer({
+          id: 'rel-endpoint-dot',
+          data: endpoints,
+          getPosition: (d) => d.position,
+          getRadius: 60000,
+          getFillColor: (d) => d.color,
+          stroked: true,
+          getLineColor: [255, 255, 255, 80] as [number, number, number, number],
+          lineWidthMinPixels: 1,
+          radiusUnits: 'meters',
+          pickable: false,
+          updateTriggers: { getFillColor: [endpoints] },
+        })
+      )
+
+      // Country name labels at endpoints
+      result.push(
+        new TextLayer({
+          id: 'rel-labels',
+          data: endpoints,
+          getPosition: (d) => d.position,
+          getText: (d) => d.label,
+          getSize: 11,
+          getColor: (d) => [d.color[0], d.color[1], d.color[2], 200] as [number, number, number, number],
+          getPixelOffset: [0, -22],
+          fontFamily: '"IBM Plex Mono", "JetBrains Mono", monospace',
+          fontWeight: 600,
+          getTextAnchor: 'middle',
+          getAlignmentBaseline: 'bottom',
+          background: true,
+          getBackgroundColor: [10, 14, 20, 180] as [number, number, number, number],
+          backgroundPadding: [4, 2, 4, 2],
+          pickable: false,
+          updateTriggers: { getColor: [endpoints], getText: [endpoints] },
+        })
+      )
+    }
+
     return result
-  }, [events, vessels, flights, activeLayers, hoveredEventId, setSelectedEvent, setHoveredEventId, openIntelDrawer])
+  }, [events, vessels, flights, activeLayers, hoveredEventId, relationshipArcs, setSelectedEvent, setHoveredEventId, openIntelDrawer])
 
   const isError = Boolean(
     (hasEventLayers && eventsError) ||
