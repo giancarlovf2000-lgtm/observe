@@ -1,22 +1,14 @@
 'use client'
 
-import { useLanguageStore } from '@/store/languageStore'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { translations } from '@/lib/i18n/translations'
 
-type DeepValue<T> = T extends string
-  ? string
-  : T extends Record<string, unknown>
-  ? { [K in keyof T]: DeepValue<T[K]> }
-  : never
-
 export function useT() {
-  const language = useLanguageStore((s) => s.language)
-  const dict = translations[language] as typeof translations.en
+  const { language, setLanguage } = useLanguage()
 
-  /** Type-safe section accessor — e.g. t('nav'), t('dashboard'), etc. */
   function t<K extends keyof typeof translations.en>(section: K): (typeof translations.en)[K] {
-    return (dict as typeof translations.en)[section]
+    return translations[language][section] as (typeof translations.en)[K]
   }
 
-  return { t, language }
+  return { t, language, setLanguage }
 }

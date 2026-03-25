@@ -1,6 +1,6 @@
 'use client'
 
-import { useLanguageStore, type Language } from '@/store/languageStore'
+import { useLanguage, type Language } from '@/contexts/LanguageContext'
 import { cn } from '@/lib/utils'
 
 const LANGUAGES: { code: Language; label: string; flag: string }[] = [
@@ -9,7 +9,7 @@ const LANGUAGES: { code: Language; label: string; flag: string }[] = [
 ]
 
 export function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguageStore()
+  const { language, setLanguage } = useLanguage()
 
   return (
     <div className="flex items-center gap-0.5 bg-[var(--obs-surface-elevated)] border border-border/40 rounded-lg p-0.5">
