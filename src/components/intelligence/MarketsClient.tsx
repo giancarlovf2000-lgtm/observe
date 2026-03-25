@@ -119,7 +119,7 @@ function PriceRow({ asset }: { asset: MarketAsset }) {
             isPos ? 'text-green-400' : 'text-red-400'
           )}>
             {isPos ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-            {isPos ? '+' : ''}{tick.change_pct.toFixed(2)}%
+            {isPos ? '+' : ''}{(tick.change_pct ?? 0).toFixed(2)}%
           </div>
         </div>
       ) : (
