@@ -11,6 +11,7 @@ interface UseBriefingStreamOptions {
 export function useBriefingStream({ type, context = {} }: UseBriefingStreamOptions) {
   const { completion, complete, isLoading, error } = useCompletion({
     api: '/api/briefings/stream',
+    streamProtocol: 'text',
   })
 
   async function generate() {
