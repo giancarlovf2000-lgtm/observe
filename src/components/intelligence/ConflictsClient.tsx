@@ -177,7 +177,7 @@ export function ConflictsClient({ conflicts }: { conflicts: ConflictZone[] }) {
                 <div className="flex items-center gap-2 mb-3">
                   <Brain className="w-4 h-4 text-[var(--obs-purple)]" />
                   <span className="text-sm font-semibold text-foreground">AI Analysis</span>
-                  <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">GPT-4o</Badge>
+                  <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">Perplexity Sonar</Badge>
                 </div>
                 <p className="text-sm text-foreground/85 leading-relaxed">{selected.global_events.ai_summary}</p>
               </div>

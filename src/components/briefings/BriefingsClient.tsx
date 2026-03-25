@@ -105,7 +105,7 @@ function LiveBriefingPanel() {
         <div className="flex items-center gap-2 mb-3">
           <Brain className="w-4 h-4 text-[var(--obs-purple)]" />
           <span className="text-sm font-semibold text-foreground">Generate AI Briefing</span>
-          <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">GPT-4o</Badge>
+          <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">Perplexity Sonar</Badge>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {BRIEFING_TYPES.map((bt) => (
@@ -173,7 +173,7 @@ export function BriefingsClient({ savedBriefings }: { savedBriefings: SavedBrief
           Intelligence Briefings
         </h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          AI-generated situational analysis powered by GPT-4o
+          AI-generated situational analysis powered by Perplexity Sonar Pro
         </p>
       </div>
 
