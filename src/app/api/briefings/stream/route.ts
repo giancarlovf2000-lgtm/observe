@@ -1,17 +1,8 @@
-import { streamText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPTS, buildBriefingPrompt, type BriefingType } from '@/lib/ai/prompts'
 
-// Perplexity uses an OpenAI-compatible API with real-time web search built in
-function getPerplexity() {
-  return createOpenAI({
-    apiKey:  process.env.PERPLEXITY_API_KEY ?? '',
-    baseURL: 'https://api.perplexity.ai',
-  })
-}
-
 export async function POST(req: Request) {
+  // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
@@ -21,44 +12,76 @@ export async function POST(req: Request) {
     return new Response('Invalid briefing type', { status: 400 })
   }
 
-  if (!process.env.PERPLEXITY_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'Perplexity API key not configured', demo: getDemoContent(type) }),
-      { status: 422, headers: { 'Content-Type': 'application/json' } }
-    )
+  const apiKey = process.env.PERPLEXITY_API_KEY
+  if (!apiKey) {
+    return new Response(getDemoContent(type), { status: 200, headers: { 'Content-Type': 'text/plain' } })
   }
 
-  const perplexity = getPerplexity()
-
-  try {
-    const result = await streamText({
-      // sonar-pro: 70B model with real-time web search
-      model: perplexity('sonar-pro'),
-      system: SYSTEM_PROMPTS[type as BriefingType],
+  const perplexityRes = await fetch('https://api.perplexity.ai/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'sonar-pro',
+      stream: true,
       messages: [
-        {
-          role: 'user',
-          content: buildBriefingPrompt(type, context),
-        },
+        { role: 'system', content: SYSTEM_PROMPTS[type as BriefingType] },
+        { role: 'user',   content: buildBriefingPrompt(type, context) },
       ],
-      maxOutputTokens: 2000,
+      max_tokens: 2000,
       temperature: 0.4,
-    })
+    }),
+  })
 
-    return result.toTextStreamResponse()
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[briefings/stream] streamText error:', msg)
+  if (!perplexityRes.ok) {
+    const errText = await perplexityRes.text()
+    console.error('[briefings/stream] Perplexity error:', perplexityRes.status, errText)
     return new Response(
-      JSON.stringify({ error: `AI generation failed: ${msg}` }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: `Perplexity API error ${perplexityRes.status}: ${errText}` }),
+      { status: 502, headers: { 'Content-Type': 'application/json' } }
     )
   }
+
+  // Stream the SSE response, extracting only the text content
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader  = perplexityRes.body!.getReader()
+      const decoder = new TextDecoder()
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value, { stream: true })
+          // Perplexity streams SSE: "data: {...}\n\n" lines
+          for (const line of chunk.split('\n')) {
+            if (!line.startsWith('data: ')) continue
+            const data = line.slice(6).trim()
+            if (data === '[DONE]') continue
+            try {
+              const json    = JSON.parse(data)
+              const content = json.choices?.[0]?.delta?.content
+              if (content) controller.enqueue(new TextEncoder().encode(content))
+            } catch { /* skip malformed lines */ }
+          }
+        }
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  })
 }
 
 function getDemoContent(type: string): string {
   const demos: Record<string, string> = {
-    world_daily: '**Demo Mode** — Configure your Perplexity API key (`PERPLEXITY_API_KEY`) to generate real-time AI briefings powered by Perplexity Sonar Pro with live web search.',
+    world_daily: '**Demo Mode** — Configure PERPLEXITY_API_KEY to generate real-time AI briefings.',
     regional:    '**Demo Mode** — Regional intelligence briefing requires Perplexity API configuration.',
     country:     '**Demo Mode** — Country intelligence briefing requires Perplexity API configuration.',
     conflict:    '**Demo Mode** — Conflict analysis requires Perplexity API configuration.',
