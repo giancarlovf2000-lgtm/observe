@@ -1,32 +1,74 @@
 import { BaseAdapter, type RawPayload } from './base'
 
 interface ACLEDEvent {
-  data_id: string
-  event_date: string
-  event_type: string
-  sub_event_type: string
-  actor1: string
-  actor2: string
-  country: string
-  region: string
-  admin1: string
-  location: string
-  latitude: string
-  longitude: string
-  fatalities: string
-  notes: string
-  source: string
-  timestamp: string
-  iso: string
+  data_id:       string
+  event_date:    string
+  event_type:    string
+  sub_event_type:string
+  actor1:        string
+  actor2:        string
+  country:       string
+  region:        string
+  admin1:        string
+  location:      string
+  latitude:      string
+  longitude:     string
+  fatalities:    string
+  notes:         string
+  source:        string
+  timestamp:     string
+  iso:           string
 }
 
 interface ACLEDResponse {
-  data?: ACLEDEvent[]
-  count?: number
+  data?:   ACLEDEvent[]
+  count?:  number
   status?: number
 }
 
-// Map ACLED event_type → our severity
+interface ACLEDLoginResponse {
+  csrf_token?:          string
+  logout_token?:        string
+  current_user?:        { uid: number; name: string }
+  access_token?:        string   // OAuth bearer token if present
+}
+
+// ─── OAuth / cookie auth ────────────────────────────────────────────────────
+
+async function getACLEDToken(email: string, password: string): Promise<{ cookie: string; csrf: string } | null> {
+  try {
+    const res = await fetch('https://acleddata.com/user/login?_format=json', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body:    JSON.stringify({ name: email, pass: password }),
+    })
+    if (!res.ok) {
+      console.error(`[acled] Login failed: ${res.status}`)
+      return null
+    }
+
+    const json = await res.json() as ACLEDLoginResponse
+    const csrf  = json.csrf_token ?? ''
+
+    // Extract session cookie from Set-Cookie header
+    const setCookie = res.headers.get('set-cookie') ?? ''
+    const sessionMatch = setCookie.match(/(SESS[^=]+=\S+?)(?:;|$)/)
+    const cookie = sessionMatch ? sessionMatch[1] : ''
+
+    if (!csrf && !cookie) {
+      console.error('[acled] No csrf_token or session cookie in login response')
+      return null
+    }
+
+    return { cookie, csrf }
+  } catch (err) {
+    console.error('[acled] Login error:', err)
+    return null
+  }
+}
+
+// ─── Severity mapping ───────────────────────────────────────────────────────
+
 function acleSeverity(eventType: string, fatalities: number): string {
   if (fatalities >= 100) return 'critical'
   if (fatalities >= 20)  return 'high'
@@ -40,28 +82,40 @@ function acleSeverity(eventType: string, fatalities: number): string {
   return 'moderate'
 }
 
+// ─── Adapter ────────────────────────────────────────────────────────────────
+
 export class ACLEDAdapter extends BaseAdapter {
   readonly key = 'acled'
 
   async fetchRaw(): Promise<RawPayload[]> {
-    const apiKey = process.env.ACLED_API_KEY
-    const email  = process.env.ACLED_EMAIL
+    const email    = process.env.ACLED_EMAIL
+    const password = process.env.ACLED_PASSWORD
 
-    if (!apiKey || !email) {
-      console.error('[acled] ACLED_API_KEY or ACLED_EMAIL not set')
+    if (!email || !password) {
+      console.error('[acled] ACLED_EMAIL or ACLED_PASSWORD not set')
       return []
     }
 
+    const auth = await getACLEDToken(email, password)
+    if (!auth) return []
+
     const params = new URLSearchParams({
-      key:    apiKey,
-      email:  email,
       limit:  '100',
-      order:  '1', // newest first
+      order:  '1',
       fields: 'data_id:event_date:event_type:sub_event_type:actor1:actor2:country:region:admin1:location:latitude:longitude:fatalities:notes:source:timestamp:iso',
     })
 
-    const url = `https://api.acleddata.com/acled/read.php?${params}`
-    const res = await fetch(url, { next: { revalidate: 0 } })
+    const headers: Record<string, string> = {
+      Accept:          'application/json',
+      'X-CSRF-Token':  auth.csrf,
+    }
+    if (auth.cookie) headers['Cookie'] = auth.cookie
+
+    const res = await fetch(
+      `https://acleddata.com/api/acled/read?${params}`,
+      { headers, next: { revalidate: 0 } }
+    )
+
     if (!res.ok) {
       console.error(`[acled] API error: ${res.status}`)
       return []
@@ -72,7 +126,7 @@ export class ACLEDAdapter extends BaseAdapter {
 
     return events.map((e): RawPayload => {
       const fatalities = parseInt(e.fatalities ?? '0', 10) || 0
-      const parties = [e.actor1, e.actor2].filter(Boolean)
+      const parties    = [e.actor1, e.actor2].filter(Boolean)
 
       return {
         external_id:  `acled_${e.data_id}`,
@@ -86,7 +140,7 @@ export class ACLEDAdapter extends BaseAdapter {
         region:       e.region || null,
         lat:          e.latitude  ? parseFloat(e.latitude)  : null,
         lng:          e.longitude ? parseFloat(e.longitude) : null,
-        tags:         [
+        tags: [
           'acled',
           e.event_type?.toLowerCase().replace(/\//g, '-').replace(/\s+/g, '-'),
           e.sub_event_type?.toLowerCase().replace(/\s+/g, '-'),
@@ -103,7 +157,7 @@ export class ACLEDAdapter extends BaseAdapter {
           parties,
           fatalities,
           location:    e.location || null,
-          admin1:      e.admin1  || null,
+          admin1:      e.admin1   || null,
         },
       }
     })
@@ -120,7 +174,6 @@ function buildTitle(e: ACLEDEvent): string {
   return parts.join(' ').slice(0, 500) || `Conflict event in ${e.country ?? 'unknown'}`
 }
 
-// Partial ISO numeric → alpha-2 mapping for the most common conflict countries
 const ISO_NUMERIC: Record<string, string> = {
   '004': 'AF', '008': 'AL', '012': 'DZ', '024': 'AO', '051': 'AM',
   '050': 'BD', '112': 'BY', '068': 'BO', '072': 'BW', '854': 'BF',
@@ -133,16 +186,14 @@ const ISO_NUMERIC: Record<string, string> = {
   '430': 'LR', '434': 'LY', '466': 'ML', '478': 'MR', '484': 'MX',
   '104': 'MM', '508': 'MZ', '516': 'NA', '524': 'NP', '566': 'NG',
   '586': 'PK', '275': 'PS', '591': 'PA', '604': 'PE', '608': 'PH',
-  '630': 'PR', '643': 'RU', '646': 'RW', '682': 'SA',
-  '686': 'SN', '694': 'SL', '706': 'SO', '710': 'ZA', '728': 'SS',
-  '736': 'SD', '760': 'SY', '762': 'TJ', '764': 'TH', '792': 'TR',
-  '800': 'UG', '804': 'UA', '784': 'AE', '826': 'GB', '840': 'US',
-  '858': 'UY', '860': 'UZ', '862': 'VE', '704': 'VN', '887': 'YE',
-  '894': 'ZM', '716': 'ZW',
+  '643': 'RU', '646': 'RW', '682': 'SA', '686': 'SN', '694': 'SL',
+  '706': 'SO', '710': 'ZA', '728': 'SS', '736': 'SD', '760': 'SY',
+  '762': 'TJ', '764': 'TH', '792': 'TR', '800': 'UG', '804': 'UA',
+  '784': 'AE', '826': 'GB', '840': 'US', '858': 'UY', '860': 'UZ',
+  '862': 'VE', '704': 'VN', '887': 'YE', '894': 'ZM', '716': 'ZW',
 }
 
 function isoNumericToAlpha2(numeric?: string): string | null {
   if (!numeric) return null
-  const padded = numeric.toString().padStart(3, '0')
-  return ISO_NUMERIC[padded] ?? null
+  return ISO_NUMERIC[numeric.toString().padStart(3, '0')] ?? null
 }
