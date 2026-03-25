@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       temperature: 0.4,
     })
 
-    return result.toTextStreamResponse()
+    return result.toDataStreamResponse()
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[briefings/stream] streamText error:', msg)
