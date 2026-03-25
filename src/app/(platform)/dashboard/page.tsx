@@ -7,14 +7,14 @@ export const metadata: Metadata = { title: 'Dashboard' }
 export default async function DashboardPage() {
   const supabase = await createClient()
 
-  // Fetch recent high-severity events
+  // Fetch recent high-severity events (more items for the ticker + feed)
   const { data: recentEvents } = await supabase
     .from('global_events')
     .select('id, type, title, summary, severity, country_id, region, lat, lng, occurred_at, tags')
     .eq('is_active', true)
     .in('severity', ['high', 'critical'])
     .order('occurred_at', { ascending: false })
-    .limit(8)
+    .limit(20)
 
   // Active conflicts count
   const { count: conflictCount } = await supabase

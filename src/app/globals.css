@@ -255,6 +255,40 @@
   animation: float-up 0.4s ease-out forwards;
 }
 
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker-scroll 50s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+@keyframes flash-green {
+  0% { background-color: transparent; }
+  30% { background-color: oklch(0.65 0.18 145 / 0.18); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: transparent; }
+  30% { background-color: oklch(0.60 0.22 25 / 0.18); }
+  100% { background-color: transparent; }
+}
+
+.flash-green { animation: flash-green 1.2s ease-out; }
+.flash-red   { animation: flash-red 1.2s ease-out; }
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+.animate-slide-in-right { animation: slide-in-right 0.4s cubic-bezier(0.16,1,0.3,1); }
+
 /* ============================================
    Glassmorphism utilities
    ============================================ */

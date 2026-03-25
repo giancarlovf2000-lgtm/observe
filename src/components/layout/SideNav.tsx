@@ -5,25 +5,40 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Globe, LayoutDashboard, Map, BookOpen, Star, Bell, Newspaper,
-  Sword, TrendingUp, CloudLightning, Ship, Settings, Shield, Folders,
-  ChevronLeft, ChevronRight, Globe2
+  Sword, TrendingUp, CloudLightning, Ship, Settings, Folders,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
-const NAV_ITEMS = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/map', icon: Map, label: 'World Map' },
-  { href: '/briefings', icon: BookOpen, label: 'Briefings' },
-  { href: '/conflicts', icon: Sword, label: 'Conflicts' },
-  { href: '/news', icon: Newspaper, label: 'News' },
-  { href: '/markets', icon: TrendingUp, label: 'Markets' },
-  { href: '/weather', icon: CloudLightning, label: 'Weather' },
-  { href: '/transport', icon: Ship, label: 'Transport' },
-  { href: '/watchlists', icon: Star, label: 'Watchlists' },
-  { href: '/alerts', icon: Bell, label: 'Alerts' },
-  { href: '/workspaces', icon: Folders, label: 'Workspaces' },
+const NAV_GROUPS = [
+  {
+    label: 'Core',
+    items: [
+      { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+      { href: '/map',       icon: Map,             label: 'World Map' },
+      { href: '/briefings', icon: BookOpen,         label: 'Briefings' },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { href: '/conflicts', icon: Sword,          label: 'Conflicts' },
+      { href: '/news',      icon: Newspaper,       label: 'News' },
+      { href: '/markets',   icon: TrendingUp,      label: 'Markets' },
+      { href: '/weather',   icon: CloudLightning,  label: 'Weather' },
+      { href: '/transport', icon: Ship,            label: 'Transport' },
+    ],
+  },
+  {
+    label: 'Personal',
+    items: [
+      { href: '/watchlists',  icon: Star,    label: 'Watchlists' },
+      { href: '/alerts',      icon: Bell,    label: 'Alerts' },
+      { href: '/workspaces',  icon: Folders, label: 'Workspaces' },
+    ],
+  },
 ]
 
 const BOTTOM_ITEMS = [
@@ -31,8 +46,61 @@ const BOTTOM_ITEMS = [
 ]
 
 export function SideNav() {
-  const pathname = usePathname()
+  const pathname            = usePathname()
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
+
+  function isActive(href: string) {
+    return pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
+  }
+
+  function NavItem({ item }: { item: { href: string; icon: React.ElementType; label: string } }) {
+    const active = isActive(item.href)
+
+    if (sidebarCollapsed) {
+      return (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Link
+                href={item.href}
+                className={cn(
+                  'flex items-center justify-center w-8 h-8 rounded-lg transition-all mx-auto',
+                  active
+                    ? 'bg-[var(--obs-teal)]/15 text-[var(--obs-teal)]'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                )}
+              />
+            }
+          >
+            <item.icon className="w-4 h-4" />
+          </TooltipTrigger>
+          <TooltipContent side="right" className="ml-1">{item.label}</TooltipContent>
+        </Tooltip>
+      )
+    }
+
+    return (
+      <Link
+        href={item.href}
+        className={cn(
+          'relative flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all',
+          active
+            ? 'bg-[var(--obs-teal)]/10 text-[var(--obs-teal)] font-medium'
+            : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+        )}
+      >
+        <item.icon className="w-4 h-4 flex-shrink-0" />
+        <span className="whitespace-nowrap">{item.label}</span>
+        {active && (
+          <motion.div
+            layoutId="nav-active-pill"
+            className="ml-auto w-1 h-4 rounded-full bg-[var(--obs-teal)]"
+            transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+          />
+        )}
+      </Link>
+    )
+  }
 
   return (
     <motion.aside
@@ -40,7 +108,7 @@ export function SideNav() {
       transition={{ duration: 0.2, ease: 'easeInOut' }}
       className="hidden md:flex flex-shrink-0 flex-col bg-[var(--obs-surface)] border-r border-border/40 relative overflow-hidden"
     >
-      {/* Logo area */}
+      {/* Logo */}
       <div className={cn(
         'flex items-center h-14 border-b border-border/40 px-3 flex-shrink-0',
         sidebarCollapsed ? 'justify-center' : 'gap-2.5'
@@ -54,7 +122,7 @@ export function SideNav() {
               initial={{ opacity: 0, width: 0 }}
               animate={{ opacity: 1, width: 'auto' }}
               exit={{ opacity: 0, width: 0 }}
-              className="font-bold text-sm tracking-wider uppercase text-foreground whitespace-nowrap overflow-hidden"
+              className="font-bold text-sm tracking-[0.15em] uppercase text-foreground whitespace-nowrap overflow-hidden"
             >
               OBSERVE
             </motion.span>
@@ -62,64 +130,24 @@ export function SideNav() {
         </AnimatePresence>
       </div>
 
-      {/* Nav items */}
-      <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
-        <ul className="space-y-0.5 px-2">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
-            return (
-              <li key={item.href}>
-                {sidebarCollapsed ? (
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Link
-                          href={item.href}
-                          className={cn(
-                            'flex items-center justify-center w-8 h-8 rounded-lg transition-all mx-auto',
-                            isActive
-                              ? 'bg-[var(--obs-teal)]/15 text-[var(--obs-teal)]'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                          )}
-                        />
-                      }
-                    >
-                      <item.icon className="w-4 h-4" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="ml-1">
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm transition-all',
-                      isActive
-                        ? 'bg-[var(--obs-teal)]/12 text-[var(--obs-teal)] font-medium'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                    )}
-                  >
-                    <item.icon className="w-4 h-4 flex-shrink-0" />
-                    <AnimatePresence>
-                      <motion.span
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="whitespace-nowrap"
-                      >
-                        {item.label}
-                      </motion.span>
-                    </AnimatePresence>
-                    {isActive && (
-                      <div className="ml-auto w-1 h-4 rounded-full bg-[var(--obs-teal)]" />
-                    )}
-                  </Link>
-                )}
-              </li>
-            )
-          })}
-        </ul>
+      {/* Nav groups */}
+      <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden space-y-1">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="px-2">
+            {!sidebarCollapsed && (
+              <div className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em] px-2.5 pb-1 pt-2">
+                {group.label}
+              </div>
+            )}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => (
+                <li key={item.href}>
+                  <NavItem item={item} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       {/* Bottom items */}
@@ -143,7 +171,12 @@ export function SideNav() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+              className={cn(
+                'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all',
+                isActive(item.href)
+                  ? 'bg-[var(--obs-teal)]/10 text-[var(--obs-teal)] font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+              )}
             >
               <item.icon className="w-4 h-4 flex-shrink-0" />
               <span className="whitespace-nowrap">{item.label}</span>
@@ -159,8 +192,7 @@ export function SideNav() {
       >
         {sidebarCollapsed
           ? <ChevronRight className="w-3 h-3 text-muted-foreground" />
-          : <ChevronLeft className="w-3 h-3 text-muted-foreground" />
-        }
+          : <ChevronLeft  className="w-3 h-3 text-muted-foreground" />}
       </button>
     </motion.aside>
   )

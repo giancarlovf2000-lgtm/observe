@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Search, Bell, LogOut, Settings, ChevronDown, Globe } from 'lucide-react'
+import { Search, Bell, LogOut, Settings, ChevronDown, Globe, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger
+  DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useUIStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
@@ -16,15 +16,37 @@ import { createClient } from '@/lib/supabase/client'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
 
 export function TopBar() {
-  const router = useRouter()
+  const router       = useRouter()
   const { openCommand } = useUIStore()
-  const { user } = useAuthStore()
+  const { user }     = useAuthStore()
   const [clockStr, setClockStr] = useState('')
+  const [criticalCount, setCriticalCount] = useState(0)
+
   useEffect(() => {
     const tick = () => setClockStr(new Date().toUTCString().slice(0, 25))
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
+  }, [])
+
+  // Fetch live critical event count
+  useEffect(() => {
+    async function loadCount() {
+      try {
+        const supabase = createClient()
+        const since    = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        const { count } = await supabase
+          .from('global_events')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .in('severity', ['critical', 'high'])
+          .gte('occurred_at', since)
+        if (count != null) setCriticalCount(count)
+      } catch {
+        // silent fail
+      }
+    }
+    loadCount()
   }, [])
 
   async function handleSignOut() {
@@ -43,9 +65,9 @@ export function TopBar() {
 
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-border/40 bg-[var(--obs-surface)] flex-shrink-0">
-      {/* Left: Logo on mobile, live indicator on desktop */}
+      {/* Left: Logo on mobile / live feed on desktop */}
       <div className="flex items-center gap-3">
-        {/* Mobile: OBSERVE logo (sidebar hidden on mobile) */}
+        {/* Mobile logo */}
         <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
           <div className="w-7 h-7 rounded-md bg-[var(--obs-teal)] flex items-center justify-center glow-teal">
             <Globe className="w-4 h-4 text-background" />
@@ -53,39 +75,43 @@ export function TopBar() {
           <span className="font-bold text-sm tracking-wider uppercase text-foreground">OBSERVE</span>
         </Link>
 
-        {/* Desktop: live feed indicator */}
+        {/* Desktop: live indicators */}
         <div className="hidden md:flex items-center gap-3">
           <PulseIndicator />
-          <span className="text-xs font-mono text-muted-foreground hidden sm:block">
-            LIVE FEED ACTIVE
+          <span className="text-xs font-mono text-muted-foreground hidden sm:block tracking-wide">
+            LIVE
           </span>
+          {criticalCount > 0 && (
+            <Link href="/map" className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--obs-red)]/10 border border-[var(--obs-red)]/30 hover:bg-[var(--obs-red)]/15 transition-colors">
+              <Zap className="w-2.5 h-2.5 text-[var(--obs-red)]" />
+              <span className="text-[10px] font-bold text-[var(--obs-red)]">
+                {criticalCount} critical
+              </span>
+            </Link>
+          )}
           <div className="hidden sm:flex items-center gap-2">
             <div className="w-px h-4 bg-border/60" />
-            <span className="text-xs text-muted-foreground">
-              {clockStr}
-            </span>
+            <span className="text-xs text-muted-foreground font-mono">{clockStr}</span>
           </div>
         </div>
       </div>
 
-      {/* Center: Search trigger */}
+      {/* Center: Search bar */}
       <button
         onClick={openCommand}
-        className="hidden md:flex items-center gap-2 bg-[var(--obs-surface-elevated)] hover:bg-white/5 border border-border/40 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors min-w-[280px]"
+        className="hidden md:flex items-center gap-2 bg-[var(--obs-surface-elevated)] hover:bg-white/5 border border-border/40 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-border/60 min-w-[260px]"
       >
         <Search className="w-3.5 h-3.5" />
-        <span className="flex-1 text-left text-xs">Search countries, events, assets…</span>
-        <kbd className="text-xs bg-white/5 border border-border/40 rounded px-1.5 py-0.5 font-mono">
-          ⌘K
-        </kbd>
+        <span className="flex-1 text-left text-xs">Search events, countries, assets…</span>
+        <kbd className="text-[10px] bg-white/5 border border-border/40 rounded px-1.5 py-0.5 font-mono">⌘K</kbd>
       </button>
 
-      {/* Right: alerts + user */}
-      <div className="flex items-center gap-2">
+      {/* Right: actions + user */}
+      <div className="flex items-center gap-1.5">
         {/* Mobile search */}
         <button
           onClick={openCommand}
-          className="md:hidden p-2 rounded-lg hover:bg-white/5 text-muted-foreground"
+          className="md:hidden p-2 rounded-lg hover:bg-white/5 text-muted-foreground transition-colors"
         >
           <Search className="w-4 h-4" />
         </button>
@@ -94,19 +120,21 @@ export function TopBar() {
         <Link href="/alerts">
           <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0 rounded-lg hover:bg-white/5">
             <Bell className="w-4 h-4 text-muted-foreground" />
-            <Badge className="absolute -top-0.5 -right-0.5 w-4 h-4 p-0 flex items-center justify-center text-[9px] bg-[var(--obs-red)] text-white border-0">
-              3
-            </Badge>
+            {criticalCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-[var(--obs-red)] text-white text-[9px] font-bold flex items-center justify-center border border-background">
+                {Math.min(criticalCount, 9)}
+              </span>
+            )}
           </Button>
         </Link>
 
         {/* User menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors border-0 bg-transparent cursor-pointer">
-            <div className="w-6 h-6 rounded-md bg-[var(--obs-teal)]/20 border border-[var(--obs-teal)]/30 flex items-center justify-center text-xs font-medium text-[var(--obs-teal)]">
+          <DropdownMenuTrigger className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors border-0 bg-transparent cursor-pointer">
+            <div className="w-6 h-6 rounded-md bg-[var(--obs-teal)]/20 border border-[var(--obs-teal)]/30 flex items-center justify-center text-xs font-bold text-[var(--obs-teal)]">
               {initials}
             </div>
-            <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            <ChevronDown className="w-3 h-3 text-muted-foreground hidden sm:block" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-[var(--obs-surface-elevated)] border-border/50">
             <div className="px-3 py-2">
