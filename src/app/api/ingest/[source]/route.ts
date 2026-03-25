@@ -6,6 +6,9 @@ import { OpenMeteoAdapter } from '@/lib/ingestion/adapters/openmeteo'
 import { CoinGeckoAdapter } from '@/lib/ingestion/adapters/coingecko'
 import { OpenSkyAdapter } from '@/lib/ingestion/adapters/opensky'
 import { ExchangeRateAdapter } from '@/lib/ingestion/adapters/exchangerate'
+import { ACLEDAdapter } from '@/lib/ingestion/adapters/acled'
+import { NewsAPIAdapter } from '@/lib/ingestion/adapters/newsapi'
+import { NOAAWeatherAdapter } from '@/lib/ingestion/adapters/noaaweather'
 import { runIngestionPipeline } from '@/lib/ingestion/pipeline'
 import type { BaseAdapter } from '@/lib/ingestion/adapters/base'
 
@@ -16,6 +19,9 @@ const ADAPTERS: Record<string, BaseAdapter> = {
   coingecko:    new CoinGeckoAdapter(),
   opensky:      new OpenSkyAdapter(),
   exchangerate: new ExchangeRateAdapter(),
+  acled:        new ACLEDAdapter(),
+  newsapi:      new NewsAPIAdapter(),
+  noaaweather:  new NOAAWeatherAdapter(),
 }
 
 export async function POST(

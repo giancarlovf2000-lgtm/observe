@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { GDELTAdapter } from '@/lib/ingestion/adapters/gdelt'
+import { NewsAPIAdapter } from '@/lib/ingestion/adapters/newsapi'
 import { runIngestionPipeline } from '@/lib/ingestion/pipeline'
 
-export const runtime = 'nodejs'
+export const runtime    = 'nodejs'
 export const maxDuration = 60
 
 export async function GET(req: Request) {
@@ -11,10 +12,14 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  try {
-    const result = await runIngestionPipeline(new GDELTAdapter(), 'gdelt')
-    return NextResponse.json({ ok: true, ...result })
-  } catch (err) {
-    return NextResponse.json({ ok: false, error: String(err) }, { status: 500 })
-  }
+  const [gdeltResult, newsapiResult] = await Promise.allSettled([
+    runIngestionPipeline(new GDELTAdapter(),   'gdelt'),
+    runIngestionPipeline(new NewsAPIAdapter(), 'newsapi'),
+  ])
+
+  return NextResponse.json({
+    ok:      true,
+    gdelt:   gdeltResult.status   === 'fulfilled' ? gdeltResult.value   : { error: String(gdeltResult.reason)   },
+    newsapi: newsapiResult.status === 'fulfilled' ? newsapiResult.value : { error: String(newsapiResult.reason) },
+  })
 }

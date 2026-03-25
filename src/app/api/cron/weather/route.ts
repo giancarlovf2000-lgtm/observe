@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { USGSAdapter } from '@/lib/ingestion/adapters/usgs'
 import { OpenMeteoAdapter } from '@/lib/ingestion/adapters/openmeteo'
+import { NOAAWeatherAdapter } from '@/lib/ingestion/adapters/noaaweather'
 import { runIngestionPipeline } from '@/lib/ingestion/pipeline'
 
-export const runtime = 'nodejs'
+export const runtime    = 'nodejs'
 export const maxDuration = 60
 
 export async function GET(req: Request) {
@@ -12,14 +13,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [usgsResult, reliefResult] = await Promise.allSettled([
-    runIngestionPipeline(new USGSAdapter(), 'usgs'),
-    runIngestionPipeline(new OpenMeteoAdapter(), 'reliefweb'),
+  const [usgsResult, reliefResult, noaaResult] = await Promise.allSettled([
+    runIngestionPipeline(new USGSAdapter(),       'usgs'),
+    runIngestionPipeline(new OpenMeteoAdapter(),  'reliefweb'),
+    runIngestionPipeline(new NOAAWeatherAdapter(), 'noaaweather'),
   ])
 
   return NextResponse.json({
-    ok: true,
-    usgs: usgsResult.status === 'fulfilled' ? usgsResult.value : { error: String(usgsResult.reason) },
-    reliefweb: reliefResult.status === 'fulfilled' ? reliefResult.value : { error: String(reliefResult.reason) },
+    ok:         true,
+    usgs:       usgsResult.status    === 'fulfilled' ? usgsResult.value    : { error: String(usgsResult.reason)    },
+    reliefweb:  reliefResult.status  === 'fulfilled' ? reliefResult.value  : { error: String(reliefResult.reason)  },
+    noaaweather: noaaResult.status   === 'fulfilled' ? noaaResult.value    : { error: String(noaaResult.reason)    },
   })
 }

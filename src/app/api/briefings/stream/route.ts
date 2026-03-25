@@ -1,36 +1,38 @@
 import { streamText } from 'ai'
-import { openai } from '@ai-sdk/openai'
+import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
 import { SYSTEM_PROMPTS, buildBriefingPrompt, type BriefingType } from '@/lib/ai/prompts'
 
+// Perplexity uses an OpenAI-compatible API with real-time web search built in
+function getPerplexity() {
+  return createOpenAI({
+    apiKey:  process.env.PERPLEXITY_API_KEY ?? '',
+    baseURL: 'https://api.perplexity.ai',
+  })
+}
+
 export async function POST(req: Request) {
-  // Verify authentication
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    return new Response('Unauthorized', { status: 401 })
-  }
+  if (!user) return new Response('Unauthorized', { status: 401 })
 
   const { type, context = {} } = await req.json()
-
   if (!SYSTEM_PROMPTS[type as BriefingType]) {
     return new Response('Invalid briefing type', { status: 400 })
   }
 
-  if (!process.env.OPENAI_API_KEY) {
-    // Return demo text when API key not configured
+  if (!process.env.PERPLEXITY_API_KEY) {
     return new Response(
-      JSON.stringify({
-        error: 'OpenAI API key not configured',
-        demo: getDemoContent(type),
-      }),
+      JSON.stringify({ error: 'Perplexity API key not configured', demo: getDemoContent(type) }),
       { status: 422, headers: { 'Content-Type': 'application/json' } }
     )
   }
 
+  const perplexity = getPerplexity()
+
   const result = await streamText({
-    model: openai('gpt-4o'),
+    // sonar-pro: 70B model with real-time web search
+    model: perplexity('sonar-pro'),
     system: SYSTEM_PROMPTS[type as BriefingType],
     messages: [
       {
@@ -47,11 +49,12 @@ export async function POST(req: Request) {
 
 function getDemoContent(type: string): string {
   const demos: Record<string, string> = {
-    world_daily: '**Demo Mode** — Configure your OpenAI API key to generate real AI briefings.\n\nThis is a demonstration of the OBSERVE intelligence briefing system. Once configured, GPT-4o will analyze current global events and generate comprehensive situational briefings in real time.',
-    regional: '**Demo Mode** — Regional intelligence briefing requires OpenAI API configuration.',
-    country: '**Demo Mode** — Country intelligence briefing requires OpenAI API configuration.',
-    conflict: '**Demo Mode** — Conflict analysis requires OpenAI API configuration.',
-    market: '**Demo Mode** — Market intelligence requires OpenAI API configuration.',
+    world_daily: '**Demo Mode** — Configure your Perplexity API key (`PERPLEXITY_API_KEY`) to generate real-time AI briefings powered by Perplexity Sonar Pro with live web search.',
+    regional:    '**Demo Mode** — Regional intelligence briefing requires Perplexity API configuration.',
+    country:     '**Demo Mode** — Country intelligence briefing requires Perplexity API configuration.',
+    conflict:    '**Demo Mode** — Conflict analysis requires Perplexity API configuration.',
+    market:      '**Demo Mode** — Market intelligence requires Perplexity API configuration.',
+    watchlist:   '**Demo Mode** — Watchlist briefing requires Perplexity API configuration.',
   }
-  return demos[type] ?? '**Demo Mode** — Configure OpenAI API key to enable AI briefings.'
+  return demos[type] ?? '**Demo Mode** — Configure PERPLEXITY_API_KEY to enable AI briefings.'
 }
