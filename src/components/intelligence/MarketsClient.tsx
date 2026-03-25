@@ -13,6 +13,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
 import Link from 'next/link'
+import { useT } from '@/hooks/useT'
 
 interface PriceTick {
   price: number
@@ -131,6 +132,8 @@ function PriceRow({ asset }: { asset: MarketAsset }) {
 
 // Summary stats bar
 function MarketSummary({ assets }: { assets: MarketAsset[] }) {
+  const { t }    = useT()
+  const mk       = t('markets')
   const withData = assets.filter(a => a.latest_price)
   const gainers  = withData.filter(a => (a.latest_price?.change_pct ?? 0) > 0).length
   const losers   = withData.filter(a => (a.latest_price?.change_pct ?? 0) < 0).length
@@ -141,9 +144,9 @@ function MarketSummary({ assets }: { assets: MarketAsset[] }) {
   return (
     <div className="grid grid-cols-3 gap-3">
       {[
-        { label: 'Gainers',    value: gainers,            color: 'var(--obs-green)',  sub: 'above 0%' },
-        { label: 'Losers',     value: losers,             color: 'var(--obs-red)',    sub: 'below 0%' },
-        { label: 'Avg Change', value: `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%`, color: avgChange >= 0 ? 'var(--obs-green)' : 'var(--obs-red)', sub: 'across assets' },
+        { label: mk.gainers,   value: gainers,   color: 'var(--obs-green)', sub: mk.above0 },
+        { label: mk.losers,    value: losers,     color: 'var(--obs-red)',   sub: mk.below0 },
+        { label: mk.avgChange, value: `${avgChange >= 0 ? '+' : ''}${avgChange.toFixed(2)}%`, color: avgChange >= 0 ? 'var(--obs-green)' : 'var(--obs-red)', sub: mk.acrossAssets },
       ].map(s => (
         <div key={s.label} className="glass rounded-xl p-3 border border-white/5">
           <div className="text-lg font-bold font-mono tabular-nums" style={{ color: s.color }}>{s.value}</div>
@@ -156,6 +159,8 @@ function MarketSummary({ assets }: { assets: MarketAsset[] }) {
 }
 
 export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[]; marketEvents: MarketEvent[] }) {
+  const { t } = useT()
+  const mk    = t('markets')
   const grouped = assets.reduce((acc, asset) => {
     if (!acc[asset.asset_class]) acc[asset.asset_class] = []
     acc[asset.asset_class].push(asset)
@@ -176,11 +181,11 @@ export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[];
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Activity className="w-5 h-5 text-[var(--obs-amber)]" />
-            Market & Currency Intelligence
+            {mk.title}
           </h1>
           <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
             <PulseIndicator color="var(--obs-amber)" />
-            <span>Geopolitical market signals · Educational use only</span>
+            <span>{mk.subtitle}</span>
           </div>
         </div>
       </div>
@@ -189,8 +194,7 @@ export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[];
       <div className="glass rounded-xl p-3 border border-[var(--obs-amber)]/20 flex items-start gap-2">
         <AlertTriangle className="w-4 h-4 text-[var(--obs-amber)] flex-shrink-0 mt-0.5" />
         <p className="text-xs text-muted-foreground">
-          Market data is for <strong className="text-foreground">educational and informational purposes only</strong>.
-          Not financial advice. Consult a qualified financial professional before making investment decisions.
+          {mk.disclaimer}
         </p>
       </div>
 
@@ -242,7 +246,7 @@ export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[];
         <div>
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-3.5 h-3.5 text-[var(--obs-amber)]" />
-            <h2 className="text-sm font-semibold text-foreground">Market-Moving Events</h2>
+            <h2 className="text-sm font-semibold text-foreground">{mk.movingEvents}</h2>
             <div className="flex-1 h-px bg-border/30" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

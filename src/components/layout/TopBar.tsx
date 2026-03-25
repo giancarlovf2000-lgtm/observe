@@ -14,11 +14,15 @@ import { useUIStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { createClient } from '@/lib/supabase/client'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
+import { LanguageSwitcher } from '@/components/shared/LanguageSwitcher'
+import { useT } from '@/hooks/useT'
 
 export function TopBar() {
-  const router       = useRouter()
+  const router          = useRouter()
   const { openCommand } = useUIStore()
-  const { user }     = useAuthStore()
+  const { user }        = useAuthStore()
+  const { t }           = useT()
+  const tb              = t('topbar')
   const [clockStr, setClockStr] = useState('')
   const [criticalCount, setCriticalCount] = useState(0)
 
@@ -79,13 +83,13 @@ export function TopBar() {
         <div className="hidden md:flex items-center gap-3">
           <PulseIndicator />
           <span className="text-xs font-mono text-muted-foreground hidden sm:block tracking-wide">
-            LIVE
+            {tb.live}
           </span>
           {criticalCount > 0 && (
             <Link href="/map" className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--obs-red)]/10 border border-[var(--obs-red)]/30 hover:bg-[var(--obs-red)]/15 transition-colors">
               <Zap className="w-2.5 h-2.5 text-[var(--obs-red)]" />
               <span className="text-[10px] font-bold text-[var(--obs-red)]">
-                {criticalCount} critical
+                {criticalCount} {tb.critical}
               </span>
             </Link>
           )}
@@ -102,12 +106,15 @@ export function TopBar() {
         className="hidden md:flex items-center gap-2 bg-[var(--obs-surface-elevated)] hover:bg-white/5 border border-border/40 rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-all hover:border-border/60 min-w-[260px]"
       >
         <Search className="w-3.5 h-3.5" />
-        <span className="flex-1 text-left text-xs">Search events, countries, assets…</span>
+        <span className="flex-1 text-left text-xs">{tb.searchPlaceholder}</span>
         <kbd className="text-[10px] bg-white/5 border border-border/40 rounded px-1.5 py-0.5 font-mono">⌘K</kbd>
       </button>
 
       {/* Right: actions + user */}
       <div className="flex items-center gap-1.5">
+        <div className="hidden sm:block">
+          <LanguageSwitcher />
+        </div>
         {/* Mobile search */}
         <button
           onClick={openCommand}
@@ -149,14 +156,14 @@ export function TopBar() {
               className="hover:bg-white/5 cursor-pointer flex items-center gap-2"
             >
               <Settings className="w-3.5 h-3.5" />
-              Settings
+              {tb.settings}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleSignOut}
               className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
-              Sign out
+              {tb.signOut}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

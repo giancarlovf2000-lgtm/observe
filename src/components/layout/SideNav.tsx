@@ -11,43 +11,43 @@ import {
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/uiStore'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useT } from '@/hooks/useT'
 
-const NAV_GROUPS = [
+// Nav structure uses translation keys resolved inside the component
+const NAV_GROUP_DEFS = [
   {
-    label: 'Core',
+    key: 'core' as const,
     items: [
-      { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-      { href: '/map',       icon: Map,             label: 'World Map' },
-      { href: '/briefings', icon: BookOpen,         label: 'Briefings' },
+      { href: '/dashboard', icon: LayoutDashboard, key: 'dashboard' as const },
+      { href: '/map',       icon: Map,             key: 'worldMap'  as const },
+      { href: '/briefings', icon: BookOpen,         key: 'briefings' as const },
     ],
   },
   {
-    label: 'Intelligence',
+    key: 'intelligence' as const,
     items: [
-      { href: '/conflicts', icon: Sword,          label: 'Conflicts' },
-      { href: '/news',      icon: Newspaper,       label: 'News' },
-      { href: '/markets',   icon: TrendingUp,      label: 'Markets' },
-      { href: '/weather',   icon: CloudLightning,  label: 'Weather' },
-      { href: '/transport', icon: Ship,            label: 'Transport' },
+      { href: '/conflicts', icon: Sword,         key: 'conflicts' as const },
+      { href: '/news',      icon: Newspaper,      key: 'news'      as const },
+      { href: '/markets',   icon: TrendingUp,     key: 'markets'   as const },
+      { href: '/weather',   icon: CloudLightning, key: 'weather'   as const },
+      { href: '/transport', icon: Ship,           key: 'transport' as const },
     ],
   },
   {
-    label: 'Personal',
+    key: 'personal' as const,
     items: [
-      { href: '/watchlists',  icon: Star,    label: 'Watchlists' },
-      { href: '/alerts',      icon: Bell,    label: 'Alerts' },
-      { href: '/workspaces',  icon: Folders, label: 'Workspaces' },
+      { href: '/watchlists', icon: Star,    key: 'watchlists' as const },
+      { href: '/alerts',     icon: Bell,    key: 'alerts'     as const },
+      { href: '/workspaces', icon: Folders, key: 'workspaces' as const },
     ],
   },
-]
-
-const BOTTOM_ITEMS = [
-  { href: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 export function SideNav() {
   const pathname            = usePathname()
   const { sidebarCollapsed, toggleSidebar } = useUIStore()
+  const { t }               = useT()
+  const nav                 = t('nav')
 
   function isActive(href: string) {
     return pathname === href || (href !== '/dashboard' && pathname.startsWith(href))
@@ -132,17 +132,17 @@ export function SideNav() {
 
       {/* Nav groups */}
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden space-y-1">
-        {NAV_GROUPS.map((group) => (
-          <div key={group.label} className="px-2">
+        {NAV_GROUP_DEFS.map((group) => (
+          <div key={group.key} className="px-2">
             {!sidebarCollapsed && (
               <div className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em] px-2.5 pb-1 pt-2">
-                {group.label}
+                {nav[group.key]}
               </div>
             )}
             <ul className="space-y-0.5">
               {group.items.map((item) => (
                 <li key={item.href}>
-                  <NavItem item={item} />
+                  <NavItem item={{ href: item.href, icon: item.icon, label: nav[item.key] }} />
                 </li>
               ))}
             </ul>
@@ -152,37 +152,34 @@ export function SideNav() {
 
       {/* Bottom items */}
       <div className="border-t border-border/40 py-3 px-2">
-        {BOTTOM_ITEMS.map((item) => (
-          sidebarCollapsed ? (
-            <Tooltip key={item.href}>
-              <TooltipTrigger
-                render={
-                  <Link
-                    href={item.href}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all mx-auto"
-                  />
-                }
-              >
-                <item.icon className="w-4 h-4" />
-              </TooltipTrigger>
-              <TooltipContent side="right" className="ml-1">{item.label}</TooltipContent>
-            </Tooltip>
-          ) : (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all',
-                isActive(item.href)
-                  ? 'bg-[var(--obs-teal)]/10 text-[var(--obs-teal)] font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-              )}
+        {sidebarCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Link
+                  href="/settings"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all mx-auto"
+                />
+              }
             >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              <span className="whitespace-nowrap">{item.label}</span>
-            </Link>
-          )
-        ))}
+              <Settings className="w-4 h-4" />
+            </TooltipTrigger>
+            <TooltipContent side="right" className="ml-1">{nav.settings}</TooltipContent>
+          </Tooltip>
+        ) : (
+          <Link
+            href="/settings"
+            className={cn(
+              'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm transition-all',
+              isActive('/settings')
+                ? 'bg-[var(--obs-teal)]/10 text-[var(--obs-teal)] font-medium'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            )}
+          >
+            <Settings className="w-4 h-4 flex-shrink-0" />
+            <span className="whitespace-nowrap">{nav.settings}</span>
+          </Link>
+        )}
       </div>
 
       {/* Collapse toggle */}

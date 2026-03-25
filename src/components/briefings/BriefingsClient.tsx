@@ -9,20 +9,24 @@ import { useBriefingStream } from '@/hooks/useBriefingStream'
 import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { BriefingType } from '@/lib/ai/prompts'
+import { useT } from '@/hooks/useT'
 
-const BRIEFING_TYPES: Array<{
-  type: BriefingType
-  label: string
-  icon: React.ElementType
-  description: string
-  color: string
-}> = [
-  { type: 'world_daily', label: 'World Daily', icon: Globe2, description: 'Top global developments across all domains', color: 'var(--obs-teal)' },
-  { type: 'conflict', label: 'Conflict Analysis', icon: Sword, description: 'Active conflict briefing for selected region', color: 'var(--obs-red)' },
-  { type: 'regional', label: 'Regional Brief', icon: Map, description: 'Comprehensive regional situational analysis', color: 'var(--obs-blue)' },
-  { type: 'market', label: 'Market Intelligence', icon: TrendingUp, description: 'FX, crypto, and macro market signals', color: 'var(--obs-amber)' },
-  { type: 'watchlist', label: 'Watchlist Brief', icon: Bookmark, description: 'Personalized brief on your saved items', color: 'var(--obs-purple)' },
-]
+const BRIEFING_TYPE_ICONS: Record<BriefingType, React.ElementType> = {
+  world_daily: Globe2,
+  conflict:    Sword,
+  regional:    Map,
+  country:     Globe2,
+  market:      TrendingUp,
+  watchlist:   Bookmark,
+}
+const BRIEFING_TYPE_COLORS: Record<BriefingType, string> = {
+  world_daily: 'var(--obs-teal)',
+  conflict:    'var(--obs-red)',
+  regional:    'var(--obs-blue)',
+  country:     'var(--obs-green)',
+  market:      'var(--obs-amber)',
+  watchlist:   'var(--obs-purple)',
+}
 
 interface SavedBriefing {
   id: string
@@ -94,9 +98,10 @@ function BriefingRenderer({ content }: { content: string }) {
 
 function LiveBriefingPanel() {
   const [selectedType, setSelectedType] = useState<BriefingType>('world_daily')
-  const { content, generate, isLoading, isEmpty, error } = useBriefingStream({
-    type: selectedType,
-  })
+  const { content, generate, isLoading, isEmpty, error } = useBriefingStream({ type: selectedType })
+  const { t } = useT()
+  const br = t('briefings')
+  const BRIEFING_TYPES = (Object.keys(BRIEFING_TYPE_ICONS) as BriefingType[])
 
   return (
     <div className="glass rounded-2xl border border-[var(--obs-purple)]/20 overflow-hidden">
@@ -104,26 +109,30 @@ function LiveBriefingPanel() {
       <div className="p-4 border-b border-white/5">
         <div className="flex items-center gap-2 mb-3">
           <Brain className="w-4 h-4 text-[var(--obs-purple)]" />
-          <span className="text-sm font-semibold text-foreground">Generate AI Briefing</span>
+          <span className="text-sm font-semibold text-foreground">{br.title}</span>
           <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">Perplexity Sonar</Badge>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-          {BRIEFING_TYPES.map((bt) => (
-            <button
-              key={bt.type}
-              onClick={() => setSelectedType(bt.type)}
-              className={cn(
-                'flex flex-col items-start gap-1 p-2.5 rounded-lg border transition-all text-left',
-                selectedType === bt.type
-                  ? 'border-[var(--obs-purple)]/40 bg-[var(--obs-purple)]/10'
-                  : 'border-border/30 hover:border-border/60 hover:bg-white/3'
-              )}
-            >
-              <bt.icon className="w-4 h-4" style={{ color: bt.color }} />
-              <span className="text-xs font-medium text-foreground">{bt.label}</span>
-              <span className="text-[10px] text-muted-foreground leading-tight">{bt.description}</span>
-            </button>
-          ))}
+          {BRIEFING_TYPES.map((type) => {
+            const Icon  = BRIEFING_TYPE_ICONS[type]
+            const color = BRIEFING_TYPE_COLORS[type]
+            return (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                className={cn(
+                  'flex flex-col items-start gap-1 p-2.5 rounded-lg border transition-all text-left',
+                  selectedType === type
+                    ? 'border-[var(--obs-purple)]/40 bg-[var(--obs-purple)]/10'
+                    : 'border-border/30 hover:border-border/60 hover:bg-white/3'
+                )}
+              >
+                <Icon className="w-4 h-4" style={{ color }} />
+                <span className="text-xs font-medium text-foreground">{br.types[type]}</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">{br.descriptions[type]}</span>
+              </button>
+            )
+          })}
         </div>
         <Button
           onClick={generate}
@@ -131,9 +140,9 @@ function LiveBriefingPanel() {
           className="mt-3 bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] hover:bg-[var(--obs-purple)]/30 border border-[var(--obs-purple)]/30 h-9"
         >
           {isLoading ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</>
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{br.generating}</>
           ) : (
-            <><Play className="w-4 h-4 mr-2" />Generate Briefing</>
+            <><Play className="w-4 h-4 mr-2" />{br.generate}</>
           )}
         </Button>
       </div>
@@ -144,7 +153,7 @@ function LiveBriefingPanel() {
           <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/20 mb-4">
             <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-red-400">Generation failed</p>
+              <p className="text-sm font-medium text-red-400">{br.generationFailed}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{error.message}</p>
             </div>
           </div>
@@ -152,13 +161,13 @@ function LiveBriefingPanel() {
         {isEmpty && !isLoading && !error && (
           <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
             <Brain className="w-10 h-10 opacity-20 mb-3" />
-            <p className="text-sm">Select a briefing type and click Generate</p>
+            <p className="text-sm">{br.selectPrompt}</p>
           </div>
         )}
         {isLoading && !content && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm">Analyzing global events…</span>
+            <span className="text-sm">{br.analyzing}</span>
           </div>
         )}
         {content && <BriefingRenderer content={content} />}
@@ -173,17 +182,18 @@ function LiveBriefingPanel() {
 }
 
 export function BriefingsClient({ savedBriefings }: { savedBriefings: SavedBriefing[] }) {
+  const { t } = useT()
+  const br    = t('briefings')
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Brain className="w-5 h-5 text-[var(--obs-purple)]" />
-          Intelligence Briefings
+          {br.title}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          AI-generated situational analysis powered by Perplexity Sonar Pro
-        </p>
+        <p className="text-sm text-muted-foreground mt-0.5">{br.subtitle}</p>
       </div>
 
       {/* Live briefing generator */}
@@ -194,7 +204,7 @@ export function BriefingsClient({ savedBriefings }: { savedBriefings: SavedBrief
         <div>
           <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
             <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-            Recent Briefings
+            {br.recentBriefings}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {savedBriefings.map((briefing, i) => (
