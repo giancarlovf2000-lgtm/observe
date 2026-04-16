@@ -35,6 +35,8 @@ export function OnboardingWizard() {
   const [paid, setPaid]         = useState(checkoutSuccess)
   const [checking, setChecking] = useState(false)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [restoring, setRestoring] = useState(false)
+  const [restoreMsg, setRestoreMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
   // Poll subscription status after returning from Stripe
   useEffect(() => {
@@ -53,6 +55,24 @@ export function OnboardingWizard() {
     setTimeout(() => { clearInterval(interval); setChecking(false) }, 30000)
     return () => clearInterval(interval)
   }, [checkoutSuccess])
+
+  async function handleRestore() {
+    setRestoring(true)
+    setRestoreMsg(null)
+    try {
+      const res = await fetch('/api/stripe/sync-subscription', { method: 'POST' })
+      const d = await res.json() as { ok?: boolean; message?: string; error?: string; tier?: string }
+      if (d.ok && d.tier === 'pro') {
+        setRestoreMsg({ ok: true, text: 'Subscription restored! Continuing…' })
+        setTimeout(() => { setPaid(true); setStep(1) }, 1200)
+      } else {
+        setRestoreMsg({ ok: false, text: d.error ?? d.message ?? 'Could not find a subscription for this account.' })
+      }
+    } catch {
+      setRestoreMsg({ ok: false, text: 'Network error. Please try again.' })
+    }
+    setRestoring(false)
+  }
 
   async function handleUpgrade() {
     setUpgrading(true)
@@ -200,6 +220,29 @@ export function OnboardingWizard() {
                     <p className="text-center text-xs text-muted-foreground">
                       Secure checkout via Stripe. Your data is never sold.
                     </p>
+
+                    <div className="border-t border-white/8 pt-4 space-y-2">
+                      <p className="text-center text-xs text-muted-foreground">Already subscribed?</p>
+                      <Button
+                        variant="ghost"
+                        className="w-full h-9 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={handleRestore}
+                        disabled={restoring}
+                      >
+                        {restoring ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                        Restore my purchase
+                      </Button>
+                      {restoreMsg && (
+                        <p className={cn(
+                          'text-center text-xs rounded-lg px-3 py-2',
+                          restoreMsg.ok
+                            ? 'text-[var(--obs-teal)] bg-[var(--obs-teal)]/10 border border-[var(--obs-teal)]/20'
+                            : 'text-red-400 bg-red-500/10 border border-red-500/20'
+                        )}>
+                          {restoreMsg.text}
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
               </div>

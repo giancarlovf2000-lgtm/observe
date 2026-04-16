@@ -25,17 +25,11 @@ export async function POST() {
     .eq('id', user.id)
     .single()
 
-  if (!profile?.stripe_customer_id && !profile?.stripe_subscription_id) {
-    return NextResponse.json(
-      { error: 'No Stripe customer found for your account. Have you subscribed?' },
-      { status: 404 }
-    )
-  }
-
-  // Try to get subscription by subscription ID first, then by customer
+  // Try to get subscription by subscription ID first, then by customer ID, then by email
   let subscription = null
+  let resolvedCustomerId = profile?.stripe_customer_id ?? null
 
-  if (profile.stripe_subscription_id) {
+  if (profile?.stripe_subscription_id) {
     try {
       subscription = await stripe.subscriptions.retrieve(profile.stripe_subscription_id)
     } catch {
@@ -43,18 +37,35 @@ export async function POST() {
     }
   }
 
-  if (!subscription && profile.stripe_customer_id) {
+  if (!subscription && resolvedCustomerId) {
     const { data: subs } = await stripe.subscriptions.list({
-      customer: profile.stripe_customer_id,
+      customer: resolvedCustomerId,
       limit: 1,
       status: 'all',
     })
     subscription = subs[0] ?? null
   }
 
+  // Last resort: look up by email — handles the case where webhook never fired
+  if (!subscription) {
+    const customers = await stripe.customers.list({ email: user.email, limit: 5 })
+    for (const customer of customers.data) {
+      const { data: subs } = await stripe.subscriptions.list({
+        customer: customer.id,
+        limit: 1,
+        status: 'all',
+      })
+      if (subs[0]) {
+        subscription = subs[0]
+        resolvedCustomerId = customer.id
+        break
+      }
+    }
+  }
+
   if (!subscription) {
     return NextResponse.json(
-      { error: 'No subscription found in Stripe for your account.' },
+      { error: 'No subscription found in Stripe for your account. Please contact support.' },
       { status: 404 }
     )
   }
@@ -66,6 +77,7 @@ export async function POST() {
     .update({
       tier: isActive ? 'pro' : 'free',
       subscription_status: subscription.status,
+      stripe_customer_id: resolvedCustomerId,
       stripe_subscription_id: subscription.id,
       subscription_period_end: new Date(
         (subscription.items.data[0]?.current_period_end ?? 0) * 1000
