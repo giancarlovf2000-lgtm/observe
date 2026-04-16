@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
 import Map, { NavigationControl, ScaleControl, type MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { DeckGL } from '@deck.gl/react'
@@ -12,10 +12,12 @@ import { useFilterStore } from '@/store/filterStore'
 import { useMapLayers } from '@/hooks/useMapLayers'
 import { useUIStore } from '@/store/uiStore'
 
-const MAP_STYLE = MAP_STYLES.satellite(process.env.NEXT_PUBLIC_MAPTILER_KEY)
+const CARTO_DARK = 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+const PRIMARY_STYLE = MAP_STYLES.satellite(process.env.NEXT_PUBLIC_MAPTILER_KEY)
 
 export function ObserveMap() {
   const mapRef = useRef<MapRef>(null)
+  const [mapStyle, setMapStyle] = useState(PRIMARY_STYLE)
   const { viewState, setViewState, setFlyTo, setSelectedEvent, flyTo } = useMapStore()
   const { openIntelDrawer } = useUIStore()
   const { layers, isLoading, isError } = useMapLayers()
@@ -54,10 +56,13 @@ export function ObserveMap() {
       >
         <Map
           ref={mapRef}
-          mapStyle={MAP_STYLE}
+          mapStyle={mapStyle}
           attributionControl={false}
           reuseMaps
           style={{ background: '#080c10' }}
+          onError={() => {
+            if (mapStyle !== CARTO_DARK) setMapStyle(CARTO_DARK)
+          }}
         >
           <NavigationControl
             position="top-right"

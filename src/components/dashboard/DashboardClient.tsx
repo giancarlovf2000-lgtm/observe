@@ -48,6 +48,8 @@ export interface DashboardClientProps {
   conflictCount: number
   latestBriefing: DashboardBriefing | null
   weatherEvents: DashboardEvent[]
+  hasAcled: boolean
+  hasNewsApi: boolean
 }
 
 const EVENT_TYPE_ICON: Record<string, React.ElementType> = {
@@ -138,10 +140,10 @@ function BreakingTicker({ events, liveLabel }: { events: DashboardEvent[]; liveL
 
 // ─── Stat card ──────────────────────────────────────────────────────────────
 function StatCard({
-  icon: Icon, label, value, sub, color, href,
+  icon: Icon, label, value, sub, color, href, locked = false,
 }: {
   icon: React.ElementType; label: string; value: number
-  sub: string; color: string; href: string
+  sub: string; color: string; href: string; locked?: boolean
 }) {
   return (
     <Link href={href}>
@@ -165,9 +167,13 @@ function StatCard({
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground/20 group-hover:text-muted-foreground/60 group-hover:translate-x-0.5 transition-all" />
           </div>
-          <div className="text-2xl font-bold text-foreground mb-0.5 tabular-nums">
-            <AnimatedNumber to={value} />
-          </div>
+          {locked ? (
+            <div className="text-xs text-muted-foreground/50 mb-0.5 italic">Connect to unlock</div>
+          ) : (
+            <div className="text-2xl font-bold text-foreground mb-0.5 tabular-nums">
+              <AnimatedNumber to={value} />
+            </div>
+          )}
           <div className="text-sm font-medium text-foreground/80">{label}</div>
           <div className="text-xs text-muted-foreground mt-0.5">{sub}</div>
         </div>
@@ -235,6 +241,8 @@ export function DashboardClient({
   conflictCount,
   latestBriefing,
   weatherEvents,
+  hasAcled,
+  hasNewsApi,
 }: DashboardClientProps) {
   const { t } = useT()
   const db = t('dashboard')
@@ -341,10 +349,10 @@ export function DashboardClient({
             transition={{ delay: 0.08 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-3"
           >
-            <StatCard icon={Sword}         label={db.activeConflicts} value={conflictCount}         sub={db.globallyTracked} color="var(--obs-red)"   href="/conflicts" />
+            <StatCard icon={Sword}         label={db.activeConflicts} value={conflictCount}         sub={db.globallyTracked} color="var(--obs-red)"   href="/conflicts" locked={!hasAcled} />
             <StatCard icon={AlertTriangle} label={db.criticalEvents}  value={criticalCount}         sub={db.last24Hours}     color="var(--obs-amber)" href="/map" />
             <StatCard icon={CloudLightning}label={db.weatherAlerts}   value={weatherEvents.length}  sub={db.activeEvents}    color="var(--obs-blue)"  href="/weather" />
-            <StatCard icon={Newspaper}     label={db.breakingNews}    value={newsCount}             sub={db.highSeverity}    color="#f97316"          href="/news" />
+            <StatCard icon={Newspaper}     label={db.breakingNews}    value={newsCount}             sub={db.highSeverity}    color="#f97316"          href="/news" locked={!hasNewsApi} />
           </motion.div>
 
           <div className="text-[10px] text-muted-foreground/40 font-mono -mt-1">

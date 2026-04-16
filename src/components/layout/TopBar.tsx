@@ -54,8 +54,12 @@ export function TopBar() {
   }, [])
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    } catch {
+      // ignore — redirect regardless
+    }
     window.location.href = '/'
   }
 

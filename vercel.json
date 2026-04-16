@@ -1,4 +1,5 @@
 {
+  "alias": ["www.observe.center", "observe.center"],
   "crons": [
     {
       "path": "/api/cron/news",

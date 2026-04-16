@@ -17,6 +17,16 @@ export default async function DashboardPage() {
     .order('occurred_at', { ascending: false })
     .limit(20)
 
+  // Check which gated credentials the user has
+  const { data: userCreds } = await supabase
+    .from('api_credentials')
+    .select('service')
+    .eq('user_id', user!.id)
+    .eq('is_active', true)
+
+  const hasAcled   = userCreds?.some(c => c.service === 'acled')   ?? false
+  const hasNewsApi = userCreds?.some(c => c.service === 'newsapi') ?? false
+
   // Active conflicts count
   const { count: conflictCount } = await supabase
     .from('conflict_zones')
@@ -49,6 +59,8 @@ export default async function DashboardPage() {
       conflictCount={conflictCount ?? 0}
       latestBriefing={latestBriefing ?? null}
       weatherEvents={weatherEvents ?? []}
+      hasAcled={hasAcled}
+      hasNewsApi={hasNewsApi}
     />
   )
 }
