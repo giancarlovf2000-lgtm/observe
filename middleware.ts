@@ -25,12 +25,26 @@ const PROTECTED_ROUTES = [
 const AUTH_ROUTES = ['/login', '/signup']
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request)
+  const { supabaseResponse, user, supabase } = await updateSession(request)
   const { pathname } = request.nextUrl
 
-  // Redirect authenticated users away from auth pages
+  // Authenticated user hitting /login or /signup — route them appropriately
   if (user && AUTH_ROUTES.some((r) => pathname.startsWith(r))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Check subscription so we don't bounce them through /dashboard → /onboarding
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('tier, subscription_status')
+      .eq('id', user.id)
+      .single()
+
+    const isSubscribed =
+      profile?.subscription_status === 'active' ||
+      profile?.subscription_status === 'trialing' ||
+      profile?.tier === 'pro' ||
+      profile?.tier === 'enterprise'
+
+    const dest = isSubscribed ? '/dashboard' : '/onboarding'
+    return NextResponse.redirect(new URL(dest, request.url))
   }
 
   // Redirect unauthenticated users away from protected routes
