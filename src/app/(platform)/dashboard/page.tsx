@@ -6,6 +6,7 @@ export const metadata: Metadata = { title: 'Dashboard' }
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   // Fetch recent high-severity events (more items for the ticker + feed)
   const { data: recentEvents } = await supabase
@@ -22,12 +23,12 @@ export default async function DashboardPage() {
     .select('*', { count: 'exact', head: true })
     .eq('active', true)
 
-  // Recent AI briefing
+  // Recent AI briefing — only the current user's own briefings
   const { data: latestBriefing } = await supabase
     .from('ai_briefings')
     .select('id, type, title, executive_summary, briefing_date, created_at')
     .eq('is_published', true)
-    .eq('type', 'daily')
+    .eq('generated_by', user!.id)
     .order('briefing_date', { ascending: false })
     .limit(1)
     .single()

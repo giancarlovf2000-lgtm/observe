@@ -190,7 +190,7 @@ function NewsCard({ event, index }: { event: NewsEvent; index: number }) {
   )
 }
 
-export function NewsClient({ events }: { events: NewsEvent[] }) {
+export function NewsClient({ events, hasCredential = true }: { events: NewsEvent[]; hasCredential?: boolean }) {
   const [search, setSearch]           = useState('')
   const [activeTopic, setActiveTopic] = useState<string | null>(null)
 
@@ -219,6 +219,26 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
   })
 
   const [featured, ...rest] = filtered
+
+  if (!hasCredential) {
+    return (
+      <div className="p-6 max-w-xl mx-auto mt-20 text-center space-y-4">
+        <Newspaper className="w-10 h-10 text-orange-400 mx-auto opacity-50" />
+        <h2 className="text-lg font-bold text-foreground">Connect NewsAPI to unlock News Intelligence</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          News Intelligence is powered by your own free NewsAPI key. Connect it once and live geolocated news stories will appear here automatically.
+        </p>
+        <ol className="text-left text-xs text-muted-foreground space-y-1.5 bg-white/5 rounded-xl p-4 border border-border/30">
+          <li>1. Go to <a href="https://newsapi.org/register" target="_blank" rel="noopener noreferrer" className="text-[var(--obs-teal)] hover:underline">newsapi.org/register</a> and create a free account</li>
+          <li>2. Copy your API key from the dashboard</li>
+          <li>3. Go to <a href="/settings/integrations" className="text-[var(--obs-teal)] hover:underline">Settings → Integrations</a> and paste it under NewsAPI</li>
+        </ol>
+        <a href="/settings/integrations" className="inline-block mt-2 px-4 py-2 rounded-lg bg-[var(--obs-teal)] text-background text-sm font-medium hover:bg-[var(--obs-teal)]/90">
+          Go to Integrations →
+        </a>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">

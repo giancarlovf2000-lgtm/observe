@@ -29,7 +29,7 @@ export function LandingNav() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    setUserEmail(null)
+    window.location.reload()
   }
 
   return (
