@@ -43,7 +43,7 @@ interface DashboardBriefing {
   created_at: string
 }
 
-interface DashboardClientProps {
+export interface DashboardClientProps {
   recentEvents: DashboardEvent[]
   conflictCount: number
   latestBriefing: DashboardBriefing | null

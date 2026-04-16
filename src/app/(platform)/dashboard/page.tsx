@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import { DashboardClient } from '@/components/dashboard/DashboardClient'
+import { DashboardShell } from '@/components/dashboard/DashboardShell'
 
 export const metadata: Metadata = { title: 'Dashboard' }
 
@@ -43,7 +43,7 @@ export default async function DashboardPage() {
     .limit(4)
 
   return (
-    <DashboardClient
+    <DashboardShell
       recentEvents={recentEvents ?? []}
       conflictCount={conflictCount ?? 0}
       latestBriefing={latestBriefing ?? null}
