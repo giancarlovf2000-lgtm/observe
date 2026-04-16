@@ -126,7 +126,7 @@ export function LoginForm() {
         <div className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <Link href="/signup" className="text-[var(--obs-teal)] hover:underline font-medium">
-            Create one
+            Subscribe — $29/month
           </Link>
         </div>
       </div>
