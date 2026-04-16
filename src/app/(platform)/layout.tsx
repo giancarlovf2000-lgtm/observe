@@ -22,11 +22,13 @@ export default async function PlatformLayout({
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('tier, subscription_status')
+    .select('tier, subscription_status, role')
     .eq('id', user.id)
     .single()
 
+  const isAdmin = profile?.role === 'admin'
   const isSubscribed =
+    isAdmin ||
     profile?.subscription_status === 'active' ||
     profile?.subscription_status === 'trialing' ||
     profile?.tier === 'pro' ||
