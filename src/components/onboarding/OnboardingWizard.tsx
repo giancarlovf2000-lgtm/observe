@@ -30,10 +30,11 @@ export function OnboardingWizard() {
   const searchParams = useSearchParams()
   const checkoutSuccess = searchParams.get('checkout') === 'success'
 
-  const [step, setStep]       = useState(checkoutSuccess ? 1 : 0)
+  const [step, setStep]         = useState(checkoutSuccess ? 1 : 0)
   const [upgrading, setUpgrading] = useState(false)
-  const [paid, setPaid]       = useState(checkoutSuccess)
+  const [paid, setPaid]         = useState(checkoutSuccess)
   const [checking, setChecking] = useState(false)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
   // Poll subscription status after returning from Stripe
   useEffect(() => {
@@ -55,6 +56,7 @@ export function OnboardingWizard() {
 
   async function handleUpgrade() {
     setUpgrading(true)
+    setCheckoutError(null)
     try {
       const res = await fetch('/api/stripe/checkout', {
         method:  'POST',
@@ -62,9 +64,13 @@ export function OnboardingWizard() {
         body:    JSON.stringify({ plan: 'pro' }),
       })
       const d = await res.json() as { url?: string; error?: string }
-      if (d.url) window.location.href = d.url
-    } catch {
-      // stay on page
+      if (d.url) {
+        window.location.href = d.url
+        return // page will navigate away
+      }
+      setCheckoutError(d.error ?? 'Could not start checkout. Please try again.')
+    } catch (err) {
+      setCheckoutError(err instanceof Error ? err.message : 'Network error. Please try again.')
     }
     setUpgrading(false)
   }
@@ -184,6 +190,12 @@ export function OnboardingWizard() {
                         : <><CreditCard className="w-4 h-4 mr-2" />Subscribe — $29/month</>
                       }
                     </Button>
+
+                    {checkoutError && (
+                      <p className="text-center text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                        {checkoutError}
+                      </p>
+                    )}
 
                     <p className="text-center text-xs text-muted-foreground">
                       Secure checkout via Stripe. Your data is never sold.
