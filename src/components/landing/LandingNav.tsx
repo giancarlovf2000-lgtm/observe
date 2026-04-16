@@ -4,18 +4,33 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Globe, Menu, X } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants, Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 export function LandingNav() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null)
+    })
+  }, [])
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setUserEmail(null)
+  }
 
   return (
     <header
@@ -55,15 +70,29 @@ export function LandingNav() {
 
         {/* CTA */}
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            className={cn(buttonVariants({ size: 'sm' }), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90 glow-teal font-medium')}
-          >
-            Get Access
-          </Link>
+          {userEmail ? (
+            <>
+              <span className="text-xs text-muted-foreground truncate max-w-[160px]">{userEmail}</span>
+              <Link href="/dashboard" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+                Dashboard
+              </Link>
+              <Button size="sm" variant="outline" onClick={handleSignOut}>
+                Sign out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+                Log in
+              </Link>
+              <Link
+                href="/signup"
+                className={cn(buttonVariants({ size: 'sm' }), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90 glow-teal font-medium')}
+              >
+                Get Access
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -100,15 +129,28 @@ export function LandingNav() {
               </a>
             ))}
             <div className="pt-2 flex gap-3">
-              <Link href="/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'flex-1')}>
-                Log in
-              </Link>
-              <Link
-                href="/signup"
-                className={cn(buttonVariants({ size: 'sm' }), 'flex-1 bg-[var(--obs-teal)] text-background')}
-              >
-                Get Access
-              </Link>
+              {userEmail ? (
+                <>
+                  <Link href="/dashboard" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'flex-1')}>
+                    Dashboard
+                  </Link>
+                  <Button size="sm" variant="outline" className="flex-1" onClick={handleSignOut}>
+                    Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'flex-1')}>
+                    Log in
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className={cn(buttonVariants({ size: 'sm' }), 'flex-1 bg-[var(--obs-teal)] text-background')}
+                  >
+                    Get Access
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
