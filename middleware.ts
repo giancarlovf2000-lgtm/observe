@@ -17,6 +17,7 @@ const PROTECTED_ROUTES = [
   '/events',
   '/workspaces',
   '/settings',
+  '/onboarding',
   '/admin',
 ]
 

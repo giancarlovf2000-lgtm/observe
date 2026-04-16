@@ -16,17 +16,18 @@ import { useQuery } from '@tanstack/react-query'
 import { formatDistanceToNow, format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useT } from '@/hooks/useT'
 import type { AnyEvent } from '@/types'
 
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  conflict: 'CONFLICT',
-  news: 'NEWS',
-  weather: 'WEATHER',
-  market: 'MARKET SIGNAL',
-  political: 'POLITICAL',
-  humanitarian: 'HUMANITARIAN',
-  flight: 'AVIATION',
-  vessel: 'MARITIME',
+const EVENT_TYPE_LABEL_KEYS: Record<string, string> = {
+  conflict:     'typeConflict',
+  news:         'typeNews',
+  weather:      'typeWeather',
+  market:       'typeMarket',
+  political:    'typePolitical',
+  humanitarian: 'typeHumanitarian',
+  flight:       'typeFlight',
+  vessel:       'typeVessel',
 }
 
 async function fetchEventDetail(id: string) {
@@ -39,6 +40,8 @@ export function IntelDrawer() {
   const { selectedEvent, setSelectedEvent } = useMapStore()
   const { intelDrawerOpen, closeIntelDrawer, intelTab, setIntelTab } = useUIStore()
   const isMobile = useIsMobile()
+  const { t } = useT()
+  const mp = t('map')
 
   const { data: eventDetail, isLoading } = useQuery({
     queryKey: ['event-detail', selectedEvent?.id],
@@ -84,7 +87,9 @@ export function IntelDrawer() {
                   variant="outline"
                   className="text-xs font-mono border-border/50 text-muted-foreground"
                 >
-                  {EVENT_TYPE_LABELS[event.type] ?? event.type.toUpperCase()}
+                  {EVENT_TYPE_LABEL_KEYS[event.type]
+                    ? (mp as Record<string, string>)[EVENT_TYPE_LABEL_KEYS[event.type]]
+                    : event.type.toUpperCase()}
                 </Badge>
                 <SeverityBadge severity={event.severity} />
               </div>
@@ -122,9 +127,9 @@ export function IntelDrawer() {
           {/* Tabs */}
           <Tabs value={intelTab} onValueChange={setIntelTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="h-9 bg-transparent border-b border-border/40 rounded-none px-2 flex-shrink-0">
-              <TabsTrigger value="overview" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">Overview</TabsTrigger>
-              <TabsTrigger value="analysis" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">AI Analysis</TabsTrigger>
-              <TabsTrigger value="timeline" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">Timeline</TabsTrigger>
+              <TabsTrigger value="overview" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">{mp.tabOverview}</TabsTrigger>
+              <TabsTrigger value="analysis" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">{mp.tabAnalysis}</TabsTrigger>
+              <TabsTrigger value="timeline" className="text-xs h-7 rounded-md data-[state=active]:bg-white/8">{mp.tabTimeline}</TabsTrigger>
             </TabsList>
 
             <div className="flex-1 overflow-y-auto">
@@ -132,7 +137,7 @@ export function IntelDrawer() {
                 {/* Summary */}
                 {event.summary && (
                   <div>
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Summary</div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{mp.summary}</div>
                     <p className="text-sm text-foreground/85 leading-relaxed">{event.summary}</p>
                   </div>
                 )}
@@ -142,7 +147,7 @@ export function IntelDrawer() {
                   <div>
                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
-                      Tags
+                      {mp.tags}
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                       {event.tags.map((tag) => (
@@ -158,12 +163,12 @@ export function IntelDrawer() {
                 <div className="glass rounded-xl p-3 border border-[var(--obs-amber)]/15">
                   <div className="flex items-center gap-1.5 mb-2">
                     <AlertTriangle className="w-3.5 h-3.5 text-[var(--obs-amber)]" />
-                    <span className="text-xs font-semibold text-[var(--obs-amber)]">Why This Matters</span>
+                    <span className="text-xs font-semibold text-[var(--obs-amber)]">{mp.whyItMatters}</span>
                   </div>
                   <p className="text-xs text-foreground/80 leading-relaxed">
                     {event.ai_summary
                       ? event.ai_summary.slice(0, 250) + (event.ai_summary.length > 250 ? '…' : '')
-                      : 'This event has geopolitical, humanitarian, or economic significance for the affected region and may have broader implications for trade, security, and stability.'}
+                      : mp.whyItMattersDefault}
                   </p>
                 </div>
 
@@ -176,7 +181,7 @@ export function IntelDrawer() {
                     className="flex items-center gap-2 text-xs text-[var(--obs-teal)] hover:underline"
                   >
                     <ExternalLink className="w-3 h-3" />
-                    View source
+                    {mp.viewSource}
                   </a>
                 )}
 
@@ -188,7 +193,7 @@ export function IntelDrawer() {
                     className="flex-1 h-7 text-xs border-border/50 hover:bg-white/5"
                   >
                     <BookmarkPlus className="w-3 h-3 mr-1.5" />
-                    Save
+                    {mp.save}
                   </Button>
                   <Button
                     size="sm"
@@ -196,11 +201,11 @@ export function IntelDrawer() {
                     className="flex-1 h-7 text-xs border-border/50 hover:bg-white/5"
                   >
                     <Share2 className="w-3 h-3 mr-1.5" />
-                    Share
+                    {mp.share}
                   </Button>
                   <Link href={`/events/${event.id}`} className={cn(buttonVariants({ size: 'sm' }), 'h-7 text-xs bg-[var(--obs-teal)]/90 text-background hover:bg-[var(--obs-teal)]')}>
                     <FileText className="w-3 h-3 mr-1.5" />
-                    Full Report
+                    {mp.fullReport}
                   </Link>
                 </div>
               </TabsContent>
@@ -209,7 +214,7 @@ export function IntelDrawer() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <Brain className="w-4 h-4 text-[var(--obs-purple)]" />
-                    <span className="text-sm font-semibold text-foreground">AI Analysis</span>
+                    <span className="text-sm font-semibold text-foreground">{mp.aiAnalysis}</span>
                     <Badge className="text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">Perplexity Sonar</Badge>
                   </div>
 
@@ -220,17 +225,17 @@ export function IntelDrawer() {
                   ) : (
                     <div className="glass rounded-xl p-4 text-center border border-[var(--obs-purple)]/20">
                       <Brain className="w-8 h-8 text-[var(--obs-purple)]/30 mx-auto mb-2" />
-                      <div className="text-sm text-muted-foreground">AI analysis not yet generated</div>
+                      <div className="text-sm text-muted-foreground">{mp.aiNotGenerated}</div>
                       <Button size="sm" className="mt-3 h-7 text-xs bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] hover:bg-[var(--obs-purple)]/30 border border-[var(--obs-purple)]/30">
-                        Generate Analysis
+                        {mp.generateAnalysis}
                       </Button>
                     </div>
                   )}
 
                   <div className="space-y-3">
                     {[
-                      { label: 'Strategic Implications', icon: TrendingUp },
-                      { label: 'Risk Assessment', icon: AlertTriangle },
+                      { label: mp.strategicImplications, icon: TrendingUp },
+                      { label: mp.riskAssessment, icon: AlertTriangle },
                     ].map(({ label, icon: Icon }) => (
                       <div key={label} className="glass rounded-lg p-3 border border-white/5">
                         <div className="flex items-center gap-1.5 mb-1">
@@ -238,7 +243,7 @@ export function IntelDrawer() {
                           <span className="text-xs font-semibold text-muted-foreground">{label}</span>
                         </div>
                         <p className="text-xs text-muted-foreground italic">
-                          Generate full report for detailed {label.toLowerCase()}.
+                          {mp.generateForDetail} {label.toLowerCase()}.
                         </p>
                       </div>
                     ))}
@@ -247,7 +252,7 @@ export function IntelDrawer() {
               </TabsContent>
 
               <TabsContent value="timeline" className="p-4 mt-0">
-                <div className="text-xs text-muted-foreground mb-3">Recent developments</div>
+                <div className="text-xs text-muted-foreground mb-3">{mp.recentDevelopments}</div>
                 <div className="space-y-3">
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -264,10 +269,10 @@ export function IntelDrawer() {
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground italic py-2">
-                    Full timeline available on the event detail page.
+                    {mp.fullTimelineAvailable}
                   </div>
                   <Link href={`/events/${event.id}`} className={cn(buttonVariants({ size: 'sm' }), 'h-7 text-xs w-full')}>
-                    View Full Timeline →
+                    {mp.viewFullTimeline}
                   </Link>
                 </div>
               </TabsContent>

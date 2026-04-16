@@ -1,11 +1,27 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, Loader2 } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+
+async function startCheckout() {
+  const res = await fetch('/api/stripe/checkout', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ plan: 'pro' }),
+  })
+  const d = await res.json() as { url?: string; error?: string }
+  if (d.url) {
+    window.location.href = d.url
+  } else if (d.error === 'Unauthorized') {
+    // Not logged in — go to signup with plan intent
+    window.location.href = '/signup?plan=pro'
+  }
+}
 
 const PLANS = [
   {
@@ -64,6 +80,94 @@ const PLANS = [
   },
 ]
 
+type PlanDef = typeof PLANS[number]
+
+function PlanCard({ plan, index }: { plan: PlanDef; index: number }) {
+  const [busy, setBusy] = useState(false)
+
+  async function handleClick() {
+    if (!plan.featured) return
+    setBusy(true)
+    await startCheckout()
+    setBusy(false)
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      className={cn(
+        'relative rounded-2xl p-6 border transition-all',
+        plan.featured
+          ? 'border-[var(--obs-teal)]/40 glass-elevated glow-teal'
+          : 'border-border/40 glass'
+      )}
+    >
+      {plan.featured && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+          <Badge className="bg-[var(--obs-teal)] text-background text-xs font-semibold px-3">
+            Most Popular
+          </Badge>
+        </div>
+      )}
+
+      <div className="mb-6">
+        <div className="text-sm font-mono text-muted-foreground uppercase tracking-wider mb-1">
+          {plan.name}
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+          {plan.period && (
+            <span className="text-muted-foreground text-sm">{plan.period}</span>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
+      </div>
+
+      <ul className="space-y-2.5 mb-8">
+        {plan.features.map((feature) => (
+          <li key={feature} className="flex items-center gap-2.5 text-sm">
+            <Check
+              className="w-4 h-4 flex-shrink-0"
+              style={{ color: plan.featured ? 'var(--obs-teal)' : 'var(--obs-green)' }}
+            />
+            <span className="text-foreground/80">{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      {plan.featured ? (
+        <button
+          onClick={handleClick}
+          disabled={busy}
+          className={cn(
+            buttonVariants(),
+            'w-full group bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90'
+          )}
+        >
+          {busy
+            ? <Loader2 className="w-4 h-4 animate-spin" />
+            : <>{plan.cta}<ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" /></>
+          }
+        </button>
+      ) : (
+        <Link
+          href={plan.href}
+          className={cn(
+            buttonVariants(),
+            'w-full group border border-border/60 bg-transparent hover:bg-white/5'
+          )}
+        >
+          {plan.cta}
+          <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+      )}
+    </motion.div>
+  )
+}
+
 export function LandingPricing() {
   return (
     <section id="pricing" className="py-24 px-6">
@@ -89,66 +193,7 @@ export function LandingPricing() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLANS.map((plan, i) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={cn(
-                'relative rounded-2xl p-6 border transition-all',
-                plan.featured
-                  ? 'border-[var(--obs-teal)]/40 glass-elevated glow-teal'
-                  : 'border-border/40 glass'
-              )}
-            >
-              {plan.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-[var(--obs-teal)] text-background text-xs font-semibold px-3">
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-
-              <div className="mb-6">
-                <div className="text-sm font-mono text-muted-foreground uppercase tracking-wider mb-1">
-                  {plan.name}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-foreground">{plan.price}</span>
-                  {plan.period && (
-                    <span className="text-muted-foreground text-sm">{plan.period}</span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-              </div>
-
-              <ul className="space-y-2.5 mb-8">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-center gap-2.5 text-sm">
-                    <Check
-                      className="w-4 h-4 flex-shrink-0"
-                      style={{ color: plan.featured ? 'var(--obs-teal)' : 'var(--obs-green)' }}
-                    />
-                    <span className="text-foreground/80">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link
-                href={plan.href}
-                className={cn(
-                  buttonVariants(),
-                  'w-full group',
-                  plan.featured
-                    ? 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90'
-                    : 'border border-border/60 bg-transparent hover:bg-white/5'
-                )}
-              >
-                {plan.cta}
-                <ArrowRight className="ml-2 w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </Link>
-            </motion.div>
+            <PlanCard key={plan.name} plan={plan} index={i} />
           ))}
         </div>
       </div>

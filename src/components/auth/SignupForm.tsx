@@ -40,11 +40,13 @@ export function SignupForm() {
     setError(null)
     const supabase = createClient()
 
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
     const { error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
         data: { full_name: data.fullName },
+        emailRedirectTo: `${siteUrl}/api/auth/callback`,
       },
     })
 
@@ -55,7 +57,7 @@ export function SignupForm() {
 
     setSuccess(true)
     // Redirect to dashboard after brief delay
-    setTimeout(() => router.push('/dashboard'), 1500)
+    setTimeout(() => router.push('/onboarding'), 1500)
   }
 
   if (success) {

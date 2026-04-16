@@ -13,6 +13,9 @@ import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { format, formatDistanceToNow } from 'date-fns'
 import type { SeverityLevel } from '@/types'
 import Link from 'next/link'
+import { useT } from '@/hooks/useT'
+import { usePageTranslation } from '@/hooks/usePageTranslation'
+import { TranslateBanner } from '@/components/shared/TranslateBanner'
 
 interface GlobalEvent {
   id: string
@@ -75,6 +78,20 @@ export function EventDetailClient({
   event: GlobalEvent
   relatedEvents: RelatedEvent[]
 }) {
+  const { t } = useT()
+  const ev = t('event')
+
+  // Translate DB content on demand
+  const translatableItems = [{ title: event.title, summary: event.summary ?? undefined, ai_summary: event.ai_summary ?? undefined, body: event.body ?? undefined }]
+  const { items: translated, isTranslating, isTranslated, translate, reset } = usePageTranslation(translatableItems)
+  const displayEvent = {
+    ...event,
+    title:      translated[0]?.title      ?? event.title,
+    summary:    translated[0]?.summary    ?? event.summary,
+    ai_summary: translated[0]?.ai_summary ?? event.ai_summary,
+    body:       translated[0]?.body       ?? event.body,
+  }
+
   const Icon  = EVENT_TYPE_ICONS[event.type] || Globe2
   const color = EVENT_TYPE_COLORS[event.type] || 'var(--obs-teal)'
   const label = EVENT_TYPE_LABELS[event.type] || event.type.toUpperCase()
@@ -82,13 +99,22 @@ export function EventDetailClient({
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5">
       {/* Back */}
-      <a
-        href="javascript:history.back()"
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
-      >
-        <ChevronLeft className="w-3.5 h-3.5" />
-        Back
-      </a>
+      <div className="flex items-center justify-between">
+        <a
+          href="javascript:history.back()"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          {ev.back}
+        </a>
+        <TranslateBanner
+          isTranslated={isTranslated}
+          isTranslating={isTranslating}
+          onTranslate={translate}
+          onReset={reset}
+          className="border-0 bg-transparent p-0"
+        />
+      </div>
 
       {/* Event header card */}
       <motion.div
@@ -129,7 +155,7 @@ export function EventDetailClient({
 
               {/* Title */}
               <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight mb-3">
-                {event.title}
+                {displayEvent.title}
               </h1>
 
               {/* Meta row */}
@@ -169,11 +195,11 @@ export function EventDetailClient({
           <div className="flex items-center gap-2 pt-4 border-t border-border/20">
             <Button variant="outline" size="sm" className="border-border/30 text-muted-foreground h-8 text-xs hover:bg-white/5">
               <Bookmark className="w-3.5 h-3.5 mr-1.5" />
-              Save
+              {ev.save}
             </Button>
             <Button variant="outline" size="sm" className="border-border/30 text-muted-foreground h-8 text-xs hover:bg-white/5">
               <Share2 className="w-3.5 h-3.5 mr-1.5" />
-              Share
+              {ev.share}
             </Button>
             {event.data_sources?.base_url && (
               <a
@@ -183,7 +209,7 @@ export function EventDetailClient({
                 className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'border-border/30 text-muted-foreground h-8 text-xs hover:bg-white/5')}
               >
                 <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                Source
+                {ev.source}
               </a>
             )}
             <Link
@@ -191,7 +217,7 @@ export function EventDetailClient({
               className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'ml-auto border-[var(--obs-teal)]/30 text-[var(--obs-teal)] h-8 text-xs hover:bg-[var(--obs-teal)]/10')}
             >
               <Activity className="w-3.5 h-3.5 mr-1.5" />
-              View on Map
+              {ev.viewOnMap}
             </Link>
           </div>
         </div>
@@ -202,7 +228,7 @@ export function EventDetailClient({
         <div className="lg:col-span-2 space-y-4">
 
           {/* Summary */}
-          {event.summary && (
+          {displayEvent.summary && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -211,21 +237,20 @@ export function EventDetailClient({
             >
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Summary</h2>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{ev.summary}</h2>
               </div>
-              <p className="text-sm text-foreground/85 leading-relaxed">{event.summary}</p>
+              <p className="text-sm text-foreground/85 leading-relaxed">{displayEvent.summary}</p>
             </motion.div>
           )}
 
           {/* AI Analysis — featured prominently */}
-          {event.ai_summary && (
+          {displayEvent.ai_summary && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               className="glass rounded-xl border border-[var(--obs-purple)]/25 p-5 relative overflow-hidden"
             >
-              {/* Background glow */}
               <div className="absolute inset-0 opacity-15"
                 style={{ background: 'radial-gradient(ellipse at top right, oklch(0.60 0.20 280 / 0.4), transparent 70%)' }}
               />
@@ -234,19 +259,19 @@ export function EventDetailClient({
                   <div className="w-6 h-6 rounded-md bg-[var(--obs-purple)]/20 border border-[var(--obs-purple)]/30 flex items-center justify-center">
                     <Brain className="w-3.5 h-3.5 text-[var(--obs-purple)]" />
                   </div>
-                  <h2 className="text-sm font-semibold text-foreground">AI Analysis</h2>
+                  <h2 className="text-sm font-semibold text-foreground">{ev.aiAnalysis}</h2>
                   <Badge className="text-[10px] bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30">
                     Perplexity Sonar
                   </Badge>
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--obs-purple)] animate-pulse ml-auto" />
                 </div>
-                <p className="text-sm text-foreground/85 leading-relaxed">{event.ai_summary}</p>
+                <p className="text-sm text-foreground/85 leading-relaxed">{displayEvent.ai_summary}</p>
               </div>
             </motion.div>
           )}
 
           {/* Full body */}
-          {event.body && (
+          {displayEvent.body && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -255,9 +280,9 @@ export function EventDetailClient({
             >
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-3.5 h-3.5 text-muted-foreground" />
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Full Report</h2>
+                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{ev.fullReport}</h2>
               </div>
-              <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{event.body}</div>
+              <div className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">{displayEvent.body}</div>
             </motion.div>
           )}
 
@@ -288,32 +313,32 @@ export function EventDetailClient({
             className="glass rounded-xl border border-white/5 p-4"
           >
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Event Details
+              {ev.eventDetails}
             </h3>
             <div className="space-y-2.5">
               {[
-                { label: 'Type',     value: label,              color },
-                { label: 'Severity', value: event.severity },
-                { label: 'Country',  value: event.country_id?.toUpperCase() },
-                { label: 'Region',   value: event.region },
+                { label: ev.type,        value: label,              color },
+                { label: ev.severity,    value: event.severity },
+                { label: ev.country,     value: event.country_id?.toUpperCase() },
+                { label: ev.region,      value: event.region },
                 {
-                  label: 'Coordinates',
+                  label: ev.coordinates,
                   value: event.lat != null && event.lng != null
                     ? `${event.lat.toFixed(3)}°, ${event.lng.toFixed(3)}°`
                     : null,
                 },
                 {
-                  label: 'Occurred',
+                  label: ev.occurred,
                   value: format(new Date(event.occurred_at), 'PPpp'),
                 },
                 {
-                  label: 'Ingested',
+                  label: ev.ingested,
                   value: event.ingested_at
                     ? formatDistanceToNow(new Date(event.ingested_at), { addSuffix: true })
                     : null,
                 },
                 {
-                  label: 'Source',
+                  label: ev.source,
                   value: event.data_sources?.name,
                 },
               ].filter(r => r.value).map(row => (
@@ -340,7 +365,7 @@ export function EventDetailClient({
             >
               <div className="px-4 py-3 border-b border-white/5">
                 <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Related Intelligence
+                  {ev.relatedIntel}
                 </h3>
               </div>
               <div className="divide-y divide-border/10">

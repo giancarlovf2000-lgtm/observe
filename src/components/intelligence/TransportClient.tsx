@@ -6,6 +6,7 @@ import { Plane, Ship, Navigation, Anchor, MapPin, Clock, Activity, Globe2 } from
 import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { useT } from '@/hooks/useT'
 
 interface Flight {
   id: string
@@ -165,6 +166,8 @@ function VesselRow({ vessel, index }: { vessel: Vessel; index: number }) {
 
 export function TransportClient({ flights, vessels }: { flights: Flight[]; vessels: Vessel[] }) {
   const [tab, setTab] = useState<Tab>('flights')
+  const { t } = useT()
+  const tr = t('transport')
 
   const airborne = flights.filter(f => !f.on_ground)
   const grounded = flights.filter(f => f.on_ground)
@@ -178,20 +181,18 @@ export function TransportClient({ flights, vessels }: { flights: Flight[]; vesse
       <div>
         <h1 className="text-xl font-bold flex items-center gap-2">
           <Navigation className="w-5 h-5 text-[var(--obs-teal)]" />
-          Transport & Logistics Intelligence
+          {tr.title}
         </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Real-time flight tracking and vessel monitoring for geopolitical analysis
-        </p>
+        <p className="text-sm text-muted-foreground mt-0.5">{tr.subtitle}</p>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Airborne Flights', value: airborne.length, icon: Plane, color: 'var(--obs-teal)' },
-          { label: 'Tracked Vessels', value: vessels.length, icon: Ship, color: 'var(--obs-blue)' },
-          { label: 'Tankers', value: tankers.length, icon: Anchor, color: 'var(--obs-amber)' },
-          { label: 'Cargo Ships', value: cargo.length, icon: Globe2, color: 'var(--obs-green)' },
+          { label: tr.airborne,  value: airborne.length, icon: Plane,   color: 'var(--obs-teal)' },
+          { label: tr.vessels,   value: vessels.length,  icon: Ship,    color: 'var(--obs-blue)' },
+          { label: 'Tankers',    value: tankers.length,  icon: Anchor,  color: 'var(--obs-amber)' },
+          { label: 'Cargo',      value: cargo.length,    icon: Globe2,  color: 'var(--obs-green)' },
         ].map(s => (
           <div key={s.label} className="glass rounded-xl p-3 border border-white/5">
             <div className="flex items-center gap-2 mb-1">
@@ -217,7 +218,7 @@ export function TransportClient({ flights, vessels }: { flights: Flight[]; vesse
             )}
           >
             {t === 'flights' ? <Plane className="w-4 h-4" /> : <Ship className="w-4 h-4" />}
-            {t === 'flights' ? 'Flights' : 'Vessels'}
+            {t === 'flights' ? tr.flights : tr.vessels}
             <Badge variant="outline" className="text-[10px] border-border/30 text-muted-foreground">
               {t === 'flights' ? flights.length : vessels.length}
             </Badge>
@@ -232,7 +233,7 @@ export function TransportClient({ flights, vessels }: { flights: Flight[]; vesse
           <div className="glass rounded-xl border border-white/5 overflow-hidden">
             <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
               <Activity className="w-4 h-4 text-[var(--obs-teal)]" />
-              <span className="text-sm font-semibold text-foreground">Airborne</span>
+              <span className="text-sm font-semibold text-foreground">{tr.airborne}</span>
               <Badge variant="outline" className="ml-auto text-xs border-border/40 text-muted-foreground">
                 {airborne.length}
               </Badge>
@@ -252,7 +253,7 @@ export function TransportClient({ flights, vessels }: { flights: Flight[]; vesse
           <div className="glass rounded-xl border border-white/5 overflow-hidden">
             <div className="px-4 py-3 border-b border-white/5 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">On Ground</span>
+              <span className="text-sm font-semibold text-foreground">{tr.onGround}</span>
               <Badge variant="outline" className="ml-auto text-xs border-border/40 text-muted-foreground">
                 {grounded.length}
               </Badge>

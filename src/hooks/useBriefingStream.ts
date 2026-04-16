@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import type { BriefingType } from '@/lib/ai/prompts'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 interface UseBriefingStreamOptions {
   type: BriefingType
@@ -12,6 +13,7 @@ export function useBriefingStream({ type, context = {} }: UseBriefingStreamOptio
   const [content, setContent]     = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError]         = useState<Error | null>(null)
+  const { language }              = useLanguage()
 
   const generate = useCallback(async () => {
     setIsLoading(true)
@@ -22,7 +24,7 @@ export function useBriefingStream({ type, context = {} }: UseBriefingStreamOptio
       const res = await fetch('/api/briefings/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, context }),
+        body: JSON.stringify({ type, context, language }),
       })
 
       if (!res.ok) {

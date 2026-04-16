@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
+import { TranslateBanner } from '@/components/shared/TranslateBanner'
+import { usePageTranslation } from '@/hooks/usePageTranslation'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
@@ -192,8 +194,17 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
   const [search, setSearch]           = useState('')
   const [activeTopic, setActiveTopic] = useState<string | null>(null)
 
+  // Translation
+  const translatableItems = events.map(e => ({ title: e.title, summary: e.summary ?? undefined }))
+  const { items: translated, isTranslating, isTranslated, translate, reset } = usePageTranslation(translatableItems)
+  const displayEvents = events.map((e, i) => ({
+    ...e,
+    title:   translated[i]?.title   ?? e.title,
+    summary: translated[i]?.summary ?? e.summary,
+  }))
+
   // Sort by severity then recency
-  const sorted = [...events].sort((a, b) => {
+  const sorted = [...displayEvents].sort((a, b) => {
     const sd = (SEVERITY_ORDER[b.severity] ?? 0) - (SEVERITY_ORDER[a.severity] ?? 0)
     if (sd !== 0) return sd
     return new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
@@ -228,6 +239,14 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
           View on map
         </Link>
       </div>
+
+      {/* Translate banner */}
+      <TranslateBanner
+        isTranslated={isTranslated}
+        isTranslating={isTranslating}
+        onTranslate={translate}
+        onReset={reset}
+      />
 
       {/* Search + topic filters */}
       <div className="flex flex-col sm:flex-row gap-3">

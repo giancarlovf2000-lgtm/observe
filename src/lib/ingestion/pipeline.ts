@@ -13,7 +13,8 @@ interface PipelineResult {
 
 export async function runIngestionPipeline(
   adapter: BaseAdapter,
-  sourceSlug: string
+  sourceSlug: string,
+  userId?: string
 ): Promise<PipelineResult> {
   const supabase = createAdminClient()
   const result: PipelineResult = { fetched: 0, inserted: 0, skipped: 0, errors: [] }
@@ -145,6 +146,7 @@ export async function runIngestionPipeline(
           metadata: e.metadata as Json,
           occurred_at: e.occurred_at,
           is_active: true,
+          ...(userId ? { user_id: userId } : {}),
         }))
 
         const { data: inserted, error } = await supabase

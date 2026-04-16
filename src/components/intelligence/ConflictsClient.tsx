@@ -10,6 +10,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
+import { TranslateBanner } from '@/components/shared/TranslateBanner'
+import { usePageTranslation } from '@/hooks/usePageTranslation'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
@@ -343,16 +345,32 @@ function ConflictDetail({ conflict }: { conflict: ConflictZone }) {
 
 export function ConflictsClient({ conflicts }: { conflicts: ConflictZone[] }) {
   const [selected, setSelected] = useState<ConflictZone | null>(conflicts[0] ?? null)
-  // Mobile: which panel is active ('list' | 'detail')
   const [mobilePanel, setMobilePanel] = useState<'list' | 'detail'>('list')
+
+  // Translation
+  const translatableItems = conflicts.map(c => ({
+    name:    c.name,
+    summary: c.global_events?.summary ?? undefined,
+  }))
+  const { items: translated, isTranslating, isTranslated, translate, reset } = usePageTranslation(translatableItems)
+  const displayConflicts = conflicts.map((c, i) => ({
+    ...c,
+    name:          translated[i]?.name    ?? c.name,
+    global_events: c.global_events
+      ? { ...c.global_events, summary: translated[i]?.summary ?? c.global_events.summary }
+      : null,
+  }))
 
   function selectConflict(c: ConflictZone) {
     setSelected(c)
     setMobilePanel('detail')
   }
 
-  const sorted = [...conflicts].sort((a, b) => b.intensity - a.intensity)
+  const sorted = [...displayConflicts].sort((a, b) => b.intensity - a.intensity)
   const criticalCount = sorted.filter(c => c.intensity >= 8).length
+  const displaySelected = selected
+    ? displayConflicts.find(c => c.id === selected.id) ?? selected
+    : null
 
   return (
     <div className="flex flex-col h-full">
@@ -366,6 +384,13 @@ export function ConflictsClient({ conflicts }: { conflicts: ConflictZone[] }) {
             <span>{conflicts.length} tracked · {criticalCount} critical</span>
           </div>
         </div>
+        <TranslateBanner
+          isTranslated={isTranslated}
+          isTranslating={isTranslating}
+          onTranslate={translate}
+          onReset={reset}
+          className="border-0 bg-transparent p-0"
+        />
       </div>
 
       {/* Mobile navigation */}
@@ -404,8 +429,8 @@ export function ConflictsClient({ conflicts }: { conflicts: ConflictZone[] }) {
           mobilePanel === 'detail' ? 'block' : 'hidden md:block'
         )}>
           <AnimatePresence mode="wait">
-            {selected ? (
-              <ConflictDetail key={selected.id} conflict={selected} />
+            {displaySelected ? (
+              <ConflictDetail key={displaySelected.id} conflict={displaySelected as ConflictZone} />
             ) : (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                 <div className="text-center">

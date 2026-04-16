@@ -16,6 +16,9 @@ import { formatDistanceToNow } from 'date-fns'
 import { useEffect, useState, useTransition, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { SeverityLevel } from '@/types'
+import { useT } from '@/hooks/useT'
+import { usePageTranslation } from '@/hooks/usePageTranslation'
+import { TranslateBanner } from '@/components/shared/TranslateBanner'
 
 interface DashboardEvent {
   id: string
@@ -92,7 +95,7 @@ function AnimatedNumber({ to }: { to: number }) {
 }
 
 // ─── Breaking news ticker ──────────────────────────────────────────────────────
-function BreakingTicker({ events }: { events: DashboardEvent[] }) {
+function BreakingTicker({ events, liveLabel }: { events: DashboardEvent[]; liveLabel: string }) {
   if (events.length === 0) return null
 
   const items = [...events, ...events] // duplicate for seamless loop
@@ -102,7 +105,7 @@ function BreakingTicker({ events }: { events: DashboardEvent[] }) {
       {/* "LIVE" badge */}
       <div className="flex-shrink-0 flex items-center gap-1.5 px-3 border-r border-border/40 h-full bg-[var(--obs-red)]/10">
         <span className="w-1.5 h-1.5 rounded-full bg-[var(--obs-red)] animate-pulse" />
-        <span className="text-[10px] font-bold tracking-widest text-[var(--obs-red)] uppercase">LIVE</span>
+        <span className="text-[10px] font-bold tracking-widest text-[var(--obs-red)] uppercase">{liveLabel}</span>
       </div>
 
       {/* Scrolling content */}
@@ -233,12 +236,27 @@ export function DashboardClient({
   latestBriefing,
   weatherEvents,
 }: DashboardClientProps) {
+  const { t } = useT()
+  const db = t('dashboard')
+  const nav = t('nav')
+  const topbar = t('topbar')
+  const briefings = t('briefings')
+
   const criticalCount = recentEvents.filter(e => e.severity === 'critical').length
   const newsCount     = recentEvents.filter(e => e.type === 'news').length
   const [clockStr, setClockStr]       = useState('')
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
   const [isPending, startTransition]  = useTransition()
   const router = useRouter()
+
+  // Translate event titles/summaries from DB
+  const translatableEvents = recentEvents.map(e => ({ title: e.title, summary: e.summary ?? undefined }))
+  const { items: translatedEvents, isTranslating, isTranslated, translate, reset } = usePageTranslation(translatableEvents)
+  const displayEvents = recentEvents.map((e, i) => ({
+    ...e,
+    title:   translatedEvents[i]?.title   ?? e.title,
+    summary: translatedEvents[i]?.summary ?? e.summary,
+  }))
 
   useEffect(() => {
     const tick = () => setClockStr(new Date().toUTCString().slice(0, 25))
@@ -256,14 +274,14 @@ export function DashboardClient({
 
   // Determine global threat level from stats
   const threatLevel =
-    criticalCount >= 5 ? { label: 'CRITICAL', color: 'var(--obs-red)', cls: 'text-red-400' } :
-    criticalCount >= 2 ? { label: 'ELEVATED', color: 'var(--obs-amber)', cls: 'text-amber-400' } :
-    { label: 'MODERATE', color: 'var(--obs-teal)', cls: 'text-teal-400' }
+    criticalCount >= 5 ? { label: db.severity.critical, color: 'var(--obs-red)', cls: 'text-red-400' } :
+    criticalCount >= 2 ? { label: db.severity.elevated, color: 'var(--obs-amber)', cls: 'text-amber-400' } :
+    { label: db.severity.moderate, color: 'var(--obs-teal)', cls: 'text-teal-400' }
 
   return (
     <div className="flex flex-col h-full">
       {/* Breaking news ticker */}
-      <BreakingTicker events={recentEvents} />
+      <BreakingTicker events={displayEvents} liveLabel={topbar.live} />
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 sm:p-6 max-w-[1400px] mx-auto space-y-5">
@@ -276,7 +294,7 @@ export function DashboardClient({
           >
             <div>
               <div className="flex items-center gap-3 mb-0.5">
-                <h1 className="text-xl font-bold text-foreground">Command Center</h1>
+                <h1 className="text-xl font-bold text-foreground">{db.commandCenter}</h1>
                 <div className={cn(
                   'hidden sm:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border',
                   criticalCount >= 5
@@ -291,7 +309,7 @@ export function DashboardClient({
               </div>
               <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
                 <PulseIndicator />
-                <span className="hidden sm:inline">Live global situational awareness</span>
+                <span className="hidden sm:inline">{db.liveAwareness}</span>
                 <span className="font-mono hidden lg:inline">·  {clockStr}</span>
               </div>
             </div>
@@ -304,14 +322,14 @@ export function DashboardClient({
                 className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5 gap-1.5"
               >
                 <RefreshCw className={cn('w-3.5 h-3.5', isPending && 'animate-spin')} />
-                <span className="hidden sm:inline text-xs">{isPending ? 'Refreshing…' : 'Refresh'}</span>
+                <span className="hidden sm:inline text-xs">{isPending ? db.refreshing : db.refresh}</span>
               </Button>
               <Link
                 href="/map"
                 className={cn(buttonVariants({ size: 'sm' }), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90 h-8 gap-1.5 px-3 text-xs')}
               >
                 <Map className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">World Map</span>
+                <span className="hidden sm:inline">{nav.worldMap}</span>
               </Link>
             </div>
           </motion.div>
@@ -323,10 +341,10 @@ export function DashboardClient({
             transition={{ delay: 0.08 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-3"
           >
-            <StatCard icon={Sword}         label="Active Conflicts" value={conflictCount}    sub="Globally tracked"  color="var(--obs-red)"   href="/conflicts" />
-            <StatCard icon={AlertTriangle} label="Critical Events"  value={criticalCount}    sub="Last 24 hours"     color="var(--obs-amber)" href="/map" />
-            <StatCard icon={CloudLightning}label="Weather Alerts"   value={weatherEvents.length} sub="Active events"color="var(--obs-blue)"  href="/weather" />
-            <StatCard icon={Newspaper}     label="Breaking News"    value={newsCount}        sub="High-severity"     color="#f97316"          href="/news" />
+            <StatCard icon={Sword}         label={db.activeConflicts} value={conflictCount}         sub={db.globallyTracked} color="var(--obs-red)"   href="/conflicts" />
+            <StatCard icon={AlertTriangle} label={db.criticalEvents}  value={criticalCount}         sub={db.last24Hours}     color="var(--obs-amber)" href="/map" />
+            <StatCard icon={CloudLightning}label={db.weatherAlerts}   value={weatherEvents.length}  sub={db.activeEvents}    color="var(--obs-blue)"  href="/weather" />
+            <StatCard icon={Newspaper}     label={db.breakingNews}    value={newsCount}             sub={db.highSeverity}    color="#f97316"          href="/news" />
           </motion.div>
 
           <div className="text-[10px] text-muted-foreground/40 font-mono -mt-1">
@@ -346,28 +364,36 @@ export function DashboardClient({
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Zap className="w-3.5 h-3.5 text-[var(--obs-red)]" />
-                  High-Priority Intelligence
+                  {db.highPriorityIntel}
                 </h2>
                 <Link href="/map" className="text-xs text-[var(--obs-teal)] hover:underline flex items-center gap-1">
-                  Map view <ArrowRight className="w-3 h-3" />
+                  {db.mapView} <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>
 
-              {recentEvents.length === 0 ? (
+              <TranslateBanner
+                isTranslated={isTranslated}
+                isTranslating={isTranslating}
+                onTranslate={translate}
+                onReset={reset}
+                className="mb-2"
+              />
+
+              {displayEvents.length === 0 ? (
                 <div className="glass rounded-xl p-8 text-center text-muted-foreground text-sm border border-white/5">
                   <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground/30" />
-                  No high-severity events at this time
+                  {db.noHighSeverity}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {recentEvents.map((event, i) => (
+                  {displayEvents.map((event, i) => (
                     <EventRow key={event.id} event={event} index={i} />
                   ))}
                 </div>
               )}
 
               <Link href="/map" className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground hover:text-[var(--obs-teal)] transition-colors py-2 border border-dashed border-border/30 rounded-xl hover:border-[var(--obs-teal)]/30">
-                View all events on world map <ArrowRight className="w-3 h-3" />
+                {db.viewAllEvents} <ArrowRight className="w-3 h-3" />
               </Link>
             </motion.div>
 
@@ -383,10 +409,10 @@ export function DashboardClient({
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Brain className="w-3.5 h-3.5 text-[var(--obs-purple)]" />
-                    Latest Briefing
+                    {db.latestBriefing}
                   </h2>
                   <Link href="/briefings" className="text-xs text-[var(--obs-teal)] hover:underline flex items-center gap-1">
-                    All <ArrowRight className="w-3 h-3" />
+                    {t('common').all} <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
 
@@ -401,7 +427,7 @@ export function DashboardClient({
                       />
                       <div className="relative">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30 text-[10px] font-bold">DAILY BRIEF</Badge>
+                          <Badge className="bg-[var(--obs-purple)]/20 text-[var(--obs-purple)] border-[var(--obs-purple)]/30 text-[10px] font-bold">{db.dailyBrief}</Badge>
                           <span className="text-xs text-muted-foreground font-mono">
                             {new Date(latestBriefing.briefing_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
@@ -415,7 +441,7 @@ export function DashboardClient({
                           </p>
                         )}
                         <div className="mt-3 text-xs text-[var(--obs-teal)] flex items-center gap-1 group-hover:gap-2 transition-all">
-                          Read full briefing <ArrowRight className="w-3 h-3" />
+                          {db.readFullBriefing} <ArrowRight className="w-3 h-3" />
                         </div>
                       </div>
                     </motion.div>
@@ -424,9 +450,9 @@ export function DashboardClient({
                   <Link href="/briefings?generate=world">
                     <div className="glass rounded-xl p-4 border border-[var(--obs-purple)]/15 hover:glass-elevated transition-all cursor-pointer text-center">
                       <Brain className="w-8 h-8 text-[var(--obs-purple)]/30 mx-auto mb-2" />
-                      <div className="text-sm text-muted-foreground">Generate today's briefing</div>
+                      <div className="text-sm text-muted-foreground">{db.generateToday}</div>
                       <div className="text-xs text-[var(--obs-teal)] mt-1 flex items-center justify-center gap-1">
-                        Generate now <ArrowRight className="w-3 h-3" />
+                        {db.generateNow} <ArrowRight className="w-3 h-3" />
                       </div>
                     </div>
                   </Link>
@@ -438,7 +464,7 @@ export function DashboardClient({
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                     <Globe2 className="w-3.5 h-3.5 text-[var(--obs-amber)]" />
-                    Region Risk Index
+                    {db.regionRisk}
                   </h2>
                 </div>
                 <div className="glass rounded-xl p-4 border border-white/5 space-y-3">
@@ -489,14 +515,14 @@ export function DashboardClient({
               <div>
                 <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5 text-[var(--obs-teal)]" />
-                  Quick Actions
+                  {db.quickActions}
                 </h2>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { href: '/briefings?generate=world', icon: Brain,        label: 'Generate Briefing', color: 'var(--obs-purple)' },
-                    { href: '/map',                      icon: Map,           label: 'Open World Map',   color: 'var(--obs-teal)' },
-                    { href: '/alerts',                   icon: Bell,          label: 'Alert Rules',      color: 'var(--obs-amber)' },
-                    { href: '/conflicts',                icon: Sword,         label: 'Conflicts',        color: 'var(--obs-red)' },
+                    { href: '/briefings?generate=world', icon: Brain,  label: briefings.generate, color: 'var(--obs-purple)' },
+                    { href: '/map',                      icon: Map,    label: db.openWorldMap,    color: 'var(--obs-teal)' },
+                    { href: '/alerts',                   icon: Bell,   label: db.alertRules,      color: 'var(--obs-amber)' },
+                    { href: '/conflicts',                icon: Sword,  label: nav.conflicts,      color: 'var(--obs-red)' },
                   ].map(({ href, icon: Icon, label, color }) => (
                     <Link key={href} href={href}>
                       <motion.div

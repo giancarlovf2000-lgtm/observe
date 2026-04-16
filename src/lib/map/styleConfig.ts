@@ -1,5 +1,6 @@
 // MapLibre GL JS style configuration
-// Uses MapTiler's dark style (free tier) — swap with any compatible style
+// Uses MapTiler's landscape (terrain/elevation) style
+// Get a free API key at: https://cloud.maptiler.com/maps/
 
 function isValidKey(key?: string | null): key is string {
   return !!key && !key.startsWith('your_') && key.length > 10
@@ -7,26 +8,37 @@ function isValidKey(key?: string | null): key is string {
 
 export function getMapStyle(key?: string | null): string {
   if (isValidKey(key)) {
-    return `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
+    return `https://api.maptiler.com/maps/landscape/style.json?key=${key}`
   }
-  // Fallback: CARTO Dark Matter — completely free, no API key required
-  return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+  // Fallback: CARTO Positron — light, clean, no API key required
+  return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 }
 
-// Alternative styles
+// Alternative styles (all require MapTiler key except fallbacks)
 export const MAP_STYLES = {
+  // Warm earth-tone terrain with elevation shading — matches the landscape screenshots
+  landscape: (key?: string) =>
+    isValidKey(key)
+      ? `https://api.maptiler.com/maps/landscape/style.json?key=${key}`
+      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  // Minimal cream/clay relief — closest to screenshot 1
+  winter: (key?: string) =>
+    isValidKey(key)
+      ? `https://api.maptiler.com/maps/winter/style.json?key=${key}`
+      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+  // Original dark style
   dark: (key?: string) =>
     isValidKey(key)
       ? `https://api.maptiler.com/maps/dataviz-dark/style.json?key=${key}`
       : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   satellite: (key?: string) =>
     isValidKey(key)
-      ? `https://api.maptiler.com/maps/satellite/style.json?key=${key}`
+      ? `https://api.maptiler.com/maps/hybrid/style.json?key=${key}`
       : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
   terrain: (key?: string) =>
     isValidKey(key)
       ? `https://api.maptiler.com/maps/outdoor/style.json?key=${key}`
-      : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+      : 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
 }
 
 export const SEVERITY_COLORS = {

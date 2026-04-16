@@ -30,9 +30,10 @@ export class NewsAPIAdapter extends BaseAdapter {
   readonly key = 'newsapi'
 
   async fetchRaw(): Promise<RawPayload[]> {
-    const apiKey = process.env.NEWSAPI_KEY
+    // BYOK: prefer passed credential, fall back to env var for shared cron
+    const apiKey = this.credentials.api_key ?? process.env.NEWSAPI_KEY
     if (!apiKey) {
-      console.error('[newsapi] NEWSAPI_KEY not set')
+      console.error('[newsapi] no api_key provided and NEWSAPI_KEY env var not set')
       return []
     }
 

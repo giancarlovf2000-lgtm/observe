@@ -141,10 +141,11 @@ export function useMapLayers() {
           },
           getFillColor: (d: EventPoint) => {
             const c = SEVERITY_COLORS[d.severity] ?? [239, 68, 68, 200]
-            return [c[0], c[1], c[2], 30] as [number, number, number, number]
+            return [c[0], c[1], c[2], 60] as [number, number, number, number]
           },
           stroked: false,
           radiusUnits: 'meters',
+          radiusMinPixels: 10,
           pickable: false,
           updateTriggers: { getFillColor: [conflictEvents] },
         }),
@@ -161,13 +162,14 @@ export function useMapLayers() {
             const isHovered = d.id === hoveredEventId
             return [c[0], c[1], c[2], isHovered ? 255 : c[3]] as [number, number, number, number]
           },
-          getLineColor: [255, 255, 255, 60] as [number, number, number, number],
+          getLineColor: [255, 255, 255, 220] as [number, number, number, number],
           stroked: true,
-          lineWidthMinPixels: 1,
+          lineWidthMinPixels: 2,
           radiusUnits: 'meters',
+          radiusMinPixels: 5,
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          highlightColor: [255, 255, 255, 80] as [number, number, number, number],
           onHover: (info: { object?: EventPoint }) => setHoveredEventId(info.object?.id ?? null),
           onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
@@ -192,9 +194,10 @@ export function useMapLayers() {
             const sizes: Record<string, number> = { minimal: 30000, low: 45000, moderate: 65000, high: 90000, critical: 120000 }
             return sizes[d.severity] ?? 45000
           },
-          getFillColor: [249, 115, 22, 25] as [number, number, number, number],
+          getFillColor: [249, 115, 22, 55] as [number, number, number, number],
           stroked: false,
           radiusUnits: 'meters',
+          radiusMinPixels: 10,
           pickable: false,
         }),
         new ScatterplotLayer({
@@ -205,14 +208,15 @@ export function useMapLayers() {
             const sizes: Record<string, number> = { minimal: 10000, low: 14000, moderate: 20000, high: 28000, critical: 36000 }
             return sizes[d.severity] ?? 14000
           },
-          getFillColor: [249, 115, 22, 200] as [number, number, number, number],
-          getLineColor: [253, 186, 116, 120] as [number, number, number, number],
+          getFillColor: [249, 115, 22, 230] as [number, number, number, number],
+          getLineColor: [255, 255, 255, 220] as [number, number, number, number],
           stroked: true,
-          lineWidthMinPixels: 1,
+          lineWidthMinPixels: 2,
           radiusUnits: 'meters',
+          radiusMinPixels: 5,
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          highlightColor: [255, 255, 255, 80] as [number, number, number, number],
           onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
@@ -235,14 +239,15 @@ export function useMapLayers() {
             const sizes: Record<string, number> = { minimal: 20000, low: 35000, moderate: 60000, high: 90000, critical: 120000 }
             return sizes[d.severity] ?? 40000
           },
-          getFillColor: [59, 130, 246, 180] as [number, number, number, number],
-          getLineColor: [147, 197, 253, 150] as [number, number, number, number],
+          getFillColor: [59, 130, 246, 220] as [number, number, number, number],
+          getLineColor: [255, 255, 255, 220] as [number, number, number, number],
           stroked: true,
-          lineWidthMinPixels: 1.5,
+          lineWidthMinPixels: 2,
           radiusUnits: 'meters',
+          radiusMinPixels: 5,
           pickable: true,
           autoHighlight: true,
-          highlightColor: [255, 255, 255, 60] as [number, number, number, number],
+          highlightColor: [255, 255, 255, 80] as [number, number, number, number],
           onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)
@@ -262,13 +267,15 @@ export function useMapLayers() {
           data: marketEvents,
           getPosition: (d: EventPoint) => [d.lng, d.lat],
           getRadius: 30000,
-          getFillColor: [234, 179, 8, 200] as [number, number, number, number],
-          getLineColor: [253, 224, 71, 180] as [number, number, number, number],
+          getFillColor: [234, 179, 8, 230] as [number, number, number, number],
+          getLineColor: [255, 255, 255, 220] as [number, number, number, number],
           stroked: true,
-          lineWidthMinPixels: 1,
+          lineWidthMinPixels: 2,
           radiusUnits: 'meters',
+          radiusMinPixels: 5,
           pickable: true,
           autoHighlight: true,
+          highlightColor: [255, 255, 255, 80] as [number, number, number, number],
           onClick: (info: { object?: EventPoint }) => {
             if (info.object) {
               setSelectedEvent(info.object as never)

@@ -56,8 +56,7 @@ export function TopBar() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    router.push('/')
-    router.refresh()
+    window.location.href = '/login'
   }
 
   const initials = user?.user_metadata?.full_name

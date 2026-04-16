@@ -36,6 +36,15 @@ Be personalized, concise, and focused on what changed recently that is relevant 
 
 export type BriefingType = keyof typeof SYSTEM_PROMPTS
 
+const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
+  es: 'IMPORTANTE: Responde COMPLETAMENTE en español. Todo el texto debe estar en español.',
+  en: '',
+}
+
+export function getLanguageInstruction(language: string): string {
+  return LANGUAGE_INSTRUCTIONS[language] ?? ''
+}
+
 export function buildBriefingPrompt(type: BriefingType, context: Record<string, unknown>): string {
   switch (type) {
     case 'world_daily':

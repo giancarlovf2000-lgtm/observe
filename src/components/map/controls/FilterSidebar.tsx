@@ -12,35 +12,41 @@ import {
   Sword, Newspaper, CloudLightning, AlertTriangle, Plane, Ship,
   TrendingUp, Globe2, Activity, Shield, Zap, Crosshair, Network, BellRing, Bookmark
 } from 'lucide-react'
+import { useT } from '@/hooks/useT'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Sword, Newspaper, CloudLightning, AlertTriangle, Plane, Ship,
   TrendingUp, Globe2, Activity, Shield, Zap, Crosshair, Network, BellRing, Bookmark,
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  security: 'Security',
-  news: 'News & Media',
-  environment: 'Weather & Environment',
-  transport: 'Transport',
-  markets: 'Markets & Economy',
-  intelligence: 'Intelligence',
+// Maps layer IDs to translation key suffixes
+const LAYER_LABEL_KEYS: Record<string, string> = {
+  conflicts:     'layerConflicts',
+  news:          'layerNews',
+  weather:       'layerWeather',
+  disasters:     'layerDisasters',
+  flights:       'layerFlights',
+  shipping:      'layerShipping',
+  markets:       'layerMarkets',
+  country_risk:  'layerCountryRisk',
+  political:     'layerPolitical',
+  sanctions:     'layerSanctions',
+  energy:        'layerEnergy',
+  tensions:      'layerTensions',
+  infrastructure:'layerInfrastructure',
+  alerts:        'layerAlerts',
+  watchlist:     'layerWatchlist',
 }
 
-const DATE_OPTIONS = [
-  { value: '24', label: 'Last 24 hours' },
-  { value: '48', label: 'Last 48 hours' },
-  { value: '168', label: 'Last 7 days' },
-  { value: '720', label: 'Last 30 days' },
-]
-
-const SEVERITY_OPTIONS = [
-  { value: 'minimal', label: 'All levels' },
-  { value: 'low', label: 'Low and above' },
-  { value: 'moderate', label: 'Moderate and above' },
-  { value: 'high', label: 'High and above' },
-  { value: 'critical', label: 'Critical only' },
-]
+// Maps category keys to translation key suffixes
+const CATEGORY_LABEL_KEYS: Record<string, string> = {
+  security:    'catSecurity',
+  news:        'catNews',
+  environment: 'catEnvironment',
+  transport:   'catTransport',
+  markets:     'catMarkets',
+  intelligence:'catIntelligence',
+}
 
 // Shared filter content used in both desktop sidebar and mobile sheet
 function FilterContent({
@@ -60,13 +66,31 @@ function FilterContent({
   severityMin: string
   setSeverityMin: (v: 'minimal' | 'low' | 'moderate' | 'high' | 'critical') => void
 }) {
+  const { t } = useT()
+  const mp = t('map')
+
+  const DATE_OPTIONS = [
+    { value: '24',  label: mp.last24h },
+    { value: '48',  label: mp.last48h },
+    { value: '168', label: mp.last7d },
+    { value: '720', label: mp.last30d },
+  ]
+
+  const SEVERITY_OPTIONS = [
+    { value: 'minimal',  label: mp.allLevels },
+    { value: 'low',      label: mp.lowAndAbove },
+    { value: 'moderate', label: mp.moderateAndAbove },
+    { value: 'high',     label: mp.highAndAbove },
+    { value: 'critical', label: mp.criticalOnly },
+  ]
+
   return (
     <div className="flex-1 overflow-y-auto p-3 space-y-4">
       {/* Time range */}
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <Clock className="w-3 h-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">Time Range</span>
+          <span className="text-xs text-muted-foreground uppercase tracking-wider">{mp.timeRange}</span>
         </div>
         <Select
           value={String(dateHours)}
@@ -87,7 +111,7 @@ function FilterContent({
 
       {/* Severity filter */}
       <div>
-        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">Min. Severity</div>
+        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{mp.minSeverity}</div>
         <Select value={severityMin} onValueChange={(v) => setSeverityMin(v as never)}>
           <SelectTrigger className="h-7 text-xs bg-background/30 border-border/50">
             <SelectValue />
@@ -106,12 +130,14 @@ function FilterContent({
       {Object.entries(LAYER_CATEGORIES).map(([category, layers]) => (
         <div key={category}>
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-0.5">
-            {CATEGORY_LABELS[category]}
+            {(mp as Record<string, string>)[CATEGORY_LABEL_KEYS[category]]}
           </div>
           <div className="space-y-0.5">
             {layers.map((layer) => {
               const Icon = ICON_MAP[layer.icon] || Filter
               const active = isActive(layer.id as LayerId)
+              const labelKey = LAYER_LABEL_KEYS[layer.id]
+              const label = labelKey ? (mp as Record<string, string>)[labelKey] : layer.label
               return (
                 <div
                   key={layer.id}
@@ -137,7 +163,7 @@ function FilterContent({
                     'text-xs flex-1 leading-tight',
                     active ? 'text-foreground' : 'text-muted-foreground'
                   )}>
-                    {layer.label}
+                    {label}
                   </span>
                   <Switch
                     checked={active}
@@ -159,6 +185,8 @@ export function FilterSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const { activeLayers, toggleLayer, isLayerActive, dateHours, setDateHours, severityMin, setSeverityMin } = useFilterStore()
+  const { t } = useT()
+  const mp = t('map')
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -178,7 +206,7 @@ export function FilterSidebar() {
           className="absolute top-3 left-3 z-20 flex items-center gap-1.5 bg-[var(--obs-surface)]/90 backdrop-blur-md border border-border/50 rounded-xl px-3 py-2 text-xs font-medium text-foreground shadow-lg active:scale-95 transition-transform"
         >
           <Layers className="w-3.5 h-3.5 text-[var(--obs-teal)]" />
-          Layers
+          {mp.layers}
           {activeCount > 0 && (
             <span className="bg-[var(--obs-teal)]/20 text-[var(--obs-teal)] rounded-full px-1.5 py-0.5 text-[10px] font-mono">
               {activeCount}
@@ -211,10 +239,10 @@ export function FilterSidebar() {
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/20 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <Filter className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground">Map Layers</span>
+                    <span className="text-sm font-semibold text-foreground">{mp.mapLayers}</span>
                     {activeCount > 0 && (
                       <span className="text-xs bg-[var(--obs-teal)]/20 text-[var(--obs-teal)] px-1.5 py-0.5 rounded-full font-mono">
-                        {activeCount} active
+                        {activeCount} {mp.active}
                       </span>
                     )}
                   </div>
@@ -247,7 +275,7 @@ export function FilterSidebar() {
           <>
             <Filter className="w-3.5 h-3.5 text-muted-foreground" />
             <span className="text-xs font-semibold text-foreground uppercase tracking-wider flex-1">
-              Layers
+              {mp.layers}
             </span>
             {activeCount > 0 && (
               <span className="text-xs bg-[var(--obs-teal)]/20 text-[var(--obs-teal)] px-1.5 py-0.5 rounded-full font-mono">

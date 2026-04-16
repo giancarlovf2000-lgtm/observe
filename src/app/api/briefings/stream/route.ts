@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { SYSTEM_PROMPTS, buildBriefingPrompt, type BriefingType } from '@/lib/ai/prompts'
+import { SYSTEM_PROMPTS, buildBriefingPrompt, getLanguageInstruction, type BriefingType } from '@/lib/ai/prompts'
 
 export async function POST(req: Request) {
   // Auth check
@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return new Response('Unauthorized', { status: 401 })
 
-  const { type, context = {} } = await req.json()
+  const { type, context = {}, language = 'en' } = await req.json()
   if (!SYSTEM_PROMPTS[type as BriefingType]) {
     return new Response('Invalid briefing type', { status: 400 })
   }
@@ -27,8 +27,11 @@ export async function POST(req: Request) {
       model: 'sonar-pro',
       stream: true,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPTS[type as BriefingType] },
-        { role: 'user',   content: buildBriefingPrompt(type, context) },
+        {
+          role: 'system',
+          content: [SYSTEM_PROMPTS[type as BriefingType], getLanguageInstruction(language)].filter(Boolean).join('\n\n'),
+        },
+        { role: 'user', content: buildBriefingPrompt(type, context) },
       ],
       max_tokens: 2000,
       temperature: 0.4,

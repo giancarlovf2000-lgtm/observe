@@ -88,11 +88,12 @@ export class ACLEDAdapter extends BaseAdapter {
   readonly key = 'acled'
 
   async fetchRaw(): Promise<RawPayload[]> {
-    const email    = process.env.ACLED_EMAIL
-    const password = process.env.ACLED_PASSWORD
+    // BYOK: prefer passed credentials, fall back to env vars for shared cron
+    const email    = this.credentials.email    ?? process.env.ACLED_EMAIL
+    const password = this.credentials.password ?? process.env.ACLED_PASSWORD
 
     if (!email || !password) {
-      console.error('[acled] ACLED_EMAIL or ACLED_PASSWORD not set')
+      console.error('[acled] No credentials provided (email + password required)')
       return []
     }
 

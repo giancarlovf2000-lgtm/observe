@@ -12,7 +12,7 @@ import { useFilterStore } from '@/store/filterStore'
 import { useMapLayers } from '@/hooks/useMapLayers'
 import { useUIStore } from '@/store/uiStore'
 
-const MAP_STYLE = MAP_STYLES.dark(process.env.NEXT_PUBLIC_MAPTILER_KEY)
+const MAP_STYLE = MAP_STYLES.satellite(process.env.NEXT_PUBLIC_MAPTILER_KEY)
 
 export function ObserveMap() {
   const mapRef = useRef<MapRef>(null)

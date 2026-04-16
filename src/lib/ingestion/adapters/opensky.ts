@@ -22,8 +22,9 @@ export class OpenSkyAdapter extends BaseAdapter {
 
   async fetchRaw(): Promise<RawPayload[]> {
     const headers: Record<string, string> = {}
-    const user = process.env.OPENSKY_USERNAME
-    const pass = process.env.OPENSKY_PASSWORD
+    // BYOK: prefer passed credentials, fall back to env vars for shared cron
+    const user = this.credentials.username ?? process.env.OPENSKY_USERNAME
+    const pass = this.credentials.password ?? process.env.OPENSKY_PASSWORD
     if (user && pass) {
       headers['Authorization'] = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`
     }

@@ -11,6 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
+import { TranslateBanner } from '@/components/shared/TranslateBanner'
+import { usePageTranslation } from '@/hooks/usePageTranslation'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
@@ -193,9 +195,18 @@ function StatsBar({ events, disasters }: { events: WeatherEvent[]; disasters: Di
 export function WeatherClient({ events, disasters }: { events: WeatherEvent[]; disasters: DisasterEvent[] }) {
   const [filter, setFilter] = useState<WeatherFilter>('all')
 
+  // Translation
+  const translatableItems = events.map(e => ({ title: e.title, summary: e.summary ?? undefined }))
+  const { items: translated, isTranslating, isTranslated, translate, reset } = usePageTranslation(translatableItems)
+  const displayEvents = events.map((e, i) => ({
+    ...e,
+    title:   translated[i]?.title   ?? e.title,
+    summary: translated[i]?.summary ?? e.summary,
+  }))
+
   const filtered = filter === 'all'
-    ? events
-    : events.filter(e => {
+    ? displayEvents
+    : displayEvents.filter(e => {
         const wt = getWeatherType(e)
         if (filter === 'hurricane') return ['hurricane', 'typhoon', 'cyclone'].includes(wt)
         return wt === filter
@@ -222,6 +233,14 @@ export function WeatherClient({ events, disasters }: { events: WeatherEvent[]; d
           <span>Real-time extreme weather, natural disasters &amp; humanitarian emergencies</span>
         </div>
       </div>
+
+      {/* Translate banner */}
+      <TranslateBanner
+        isTranslated={isTranslated}
+        isTranslating={isTranslating}
+        onTranslate={translate}
+        onReset={reset}
+      />
 
       {/* Stats */}
       <StatsBar events={events} disasters={disasters} />

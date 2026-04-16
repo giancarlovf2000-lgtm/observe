@@ -32,6 +32,10 @@ export interface Database {
           last_seen_at: string | null
           created_at: string
           updated_at: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string
+          subscription_period_end: string | null
         }
         Insert: {
           id: string
@@ -42,6 +46,10 @@ export interface Database {
           tier?: string
           preferences?: Json
           last_seen_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          subscription_period_end?: string | null
         }
         Update: {
           id?: string
@@ -52,6 +60,45 @@ export interface Database {
           tier?: string
           preferences?: Json
           last_seen_at?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          subscription_period_end?: string | null
+        }
+        Relationships: []
+      }
+      api_credentials: {
+        Row: {
+          id: string
+          user_id: string
+          service: string
+          encrypted_data: string
+          is_active: boolean
+          last_tested_at: string | null
+          test_status: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          service: string
+          encrypted_data: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          test_status?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          service?: string
+          encrypted_data?: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          test_status?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
