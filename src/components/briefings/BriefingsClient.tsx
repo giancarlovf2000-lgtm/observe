@@ -181,9 +181,29 @@ function LiveBriefingPanel() {
   )
 }
 
-export function BriefingsClient({ savedBriefings }: { savedBriefings: SavedBriefing[] }) {
+export function BriefingsClient({ savedBriefings, hasCredential = true }: { savedBriefings: SavedBriefing[]; hasCredential?: boolean }) {
   const { t } = useT()
   const br    = t('briefings')
+
+  if (!hasCredential) {
+    return (
+      <div className="p-6 max-w-xl mx-auto mt-20 text-center space-y-4">
+        <Brain className="w-10 h-10 text-[var(--obs-purple)] mx-auto opacity-50" />
+        <h2 className="text-lg font-bold text-foreground">Connect Perplexity AI to unlock Briefings</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          AI briefings are powered by your own Perplexity API key. Connect it once and you can generate on-demand intelligence briefings for any region, conflict, or topic.
+        </p>
+        <ol className="text-left text-xs text-muted-foreground space-y-1.5 bg-white/5 rounded-xl p-4 border border-border/30">
+          <li>1. Go to <a href="https://www.perplexity.ai/settings/api" target="_blank" rel="noopener noreferrer" className="text-[var(--obs-teal)] hover:underline">perplexity.ai/settings/api</a> and create an account</li>
+          <li>2. Generate an API key (pay-as-you-go, no subscription needed)</li>
+          <li>3. Go to <a href="/settings/integrations" className="text-[var(--obs-teal)] hover:underline">Settings → Integrations</a> and paste it under Perplexity AI</li>
+        </ol>
+        <a href="/settings/integrations" className="inline-block mt-2 px-4 py-2 rounded-lg bg-[var(--obs-teal)] text-background text-sm font-medium hover:bg-[var(--obs-teal)]/90">
+          Go to Integrations →
+        </a>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">

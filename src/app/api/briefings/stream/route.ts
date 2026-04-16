@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { decryptCredentials } from '@/lib/credentials'
 import { SYSTEM_PROMPTS, buildBriefingPrompt, getLanguageInstruction, type BriefingType } from '@/lib/ai/prompts'
 
 export async function POST(req: Request) {
@@ -12,9 +14,40 @@ export async function POST(req: Request) {
     return new Response('Invalid briefing type', { status: 400 })
   }
 
-  const apiKey = process.env.PERPLEXITY_API_KEY
+  // Resolve API key: user's own Perplexity credential takes priority;
+  // fall back to platform key only for the platform owner (admin role).
+  let apiKey: string | undefined
+  const admin = createAdminClient()
+  const { data: cred } = await admin
+    .from('api_credentials')
+    .select('encrypted_data, is_active')
+    .eq('user_id', user.id)
+    .eq('service', 'perplexity')
+    .single()
+
+  if (cred?.is_active) {
+    const fields = decryptCredentials(cred.encrypted_data) as { api_key?: string }
+    apiKey = fields.api_key
+  }
+
   if (!apiKey) {
-    return new Response(getDemoContent(type), { status: 200, headers: { 'Content-Type': 'text/plain' } })
+    // Check if this user is an admin — only admins may use the platform key
+    const { data: profile } = await admin
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.role === 'admin') {
+      apiKey = process.env.PERPLEXITY_API_KEY
+    }
+  }
+
+  if (!apiKey) {
+    return new Response(
+      JSON.stringify({ error: 'Connect your Perplexity API key in Settings → Integrations to generate briefings.' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    )
   }
 
   const perplexityRes = await fetch('https://api.perplexity.ai/chat/completions', {

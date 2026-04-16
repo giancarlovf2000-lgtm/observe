@@ -2,27 +2,31 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Check, ArrowRight } from 'lucide-react'
+import { Check, ArrowRight, Plug } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 
-const FEATURES = [
-  'All 15 intelligence layers',
-  'Live conflict, news & weather feeds',
-  'Unlimited AI-powered briefings',
-  'Custom alerts — any country or keyword',
+const INCLUDED = [
+  'Live weather & disaster alerts (USGS, NOAA, OpenMeteo)',
+  'Market & crypto prices (CoinGecko, ExchangeRate)',
+  'Live flight & vessel tracking (OpenSky)',
+  'Global events map',
   'Country intelligence profiles',
-  'Flight & vessel tracking',
-  'Market & crypto intelligence',
+  'Custom alerts — any country or keyword',
   'Watchlists & saved views',
-  'Connect your own data sources (BYOK)',
-  'Export briefings',
+  'Workspaces',
+]
+
+const BRING_YOUR_OWN = [
+  { label: 'News Intelligence', service: 'NewsAPI — free key at newsapi.org' },
+  { label: 'Conflict Tracking', service: 'ACLED — free at acleddata.com' },
+  { label: 'AI Briefings', service: 'Perplexity AI — pay-as-you-go API key' },
 ]
 
 export function LandingPricing() {
   return (
     <section id="pricing" className="py-24 px-6">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-2xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -62,15 +66,38 @@ export function LandingPricing() {
             </p>
           </div>
 
-          {/* Features */}
-          <ul className="space-y-3 mb-8">
-            {FEATURES.map((feature) => (
-              <li key={feature} className="flex items-center gap-3 text-sm">
-                <Check className="w-4 h-4 flex-shrink-0 text-[var(--obs-teal)]" />
+          {/* Included out of the box */}
+          <p className="text-xs font-mono text-[var(--obs-teal)] uppercase tracking-widest mb-3">Included — no setup required</p>
+          <ul className="space-y-2.5 mb-8">
+            {INCLUDED.map((feature) => (
+              <li key={feature} className="flex items-start gap-3 text-sm">
+                <Check className="w-4 h-4 flex-shrink-0 text-[var(--obs-teal)] mt-0.5" />
                 <span className="text-foreground/85">{feature}</span>
               </li>
             ))}
           </ul>
+
+          {/* Bring your own keys */}
+          <div className="border-t border-white/8 pt-6 mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Plug className="w-3.5 h-3.5 text-[var(--obs-amber)]" />
+              <p className="text-xs font-mono text-[var(--obs-amber)] uppercase tracking-widest">Connect your own free API keys to unlock</p>
+            </div>
+            <ul className="space-y-2.5">
+              {BRING_YOUR_OWN.map((item) => (
+                <li key={item.label} className="flex items-start gap-3 text-sm">
+                  <Plug className="w-3.5 h-3.5 flex-shrink-0 text-[var(--obs-amber)] mt-0.5" />
+                  <span>
+                    <span className="text-foreground/85 font-medium">{item.label}</span>
+                    <span className="text-muted-foreground"> — {item.service}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+              Your keys stay private — encrypted and stored only in your account. We never share or use them outside your sessions.
+            </p>
+          </div>
 
           <Link
             href="/signup"

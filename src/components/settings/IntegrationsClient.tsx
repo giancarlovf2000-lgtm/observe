@@ -90,6 +90,24 @@ const SERVICES: ServiceDef[] = [
     required: false,
   },
   {
+    id:          'perplexity',
+    name:        'Perplexity AI',
+    description: 'AI-generated intelligence briefings — powers the Briefings layer.',
+    signupUrl:   'https://www.perplexity.ai/settings/api',
+    signupLabel: 'Get API key at perplexity.ai',
+    guide: [
+      'Go to perplexity.ai and create an account',
+      'Navigate to Settings → API',
+      'Generate a new API key',
+      'Paste it below — a small amount of credit is required (pay-as-you-go)',
+    ],
+    fields: [
+      { key: 'api_key', label: 'API Key', placeholder: 'pplx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx' },
+    ],
+    free:     false,
+    required: false,
+  },
+  {
     id:          'openweather',
     name:        'OpenWeatherMap',
     description: 'Weather data — enhances the Weather layer.',
