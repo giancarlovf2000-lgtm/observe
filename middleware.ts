@@ -21,9 +21,6 @@ const PROTECTED_ROUTES = [
   '/admin',
 ]
 
-// Routes that require admin role
-const ADMIN_ROUTES = ['/admin']
-
 // Routes that are for unauthenticated users only
 const AUTH_ROUTES = ['/login', '/signup']
 
@@ -43,25 +40,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Admin routes — check role via profile (done at page level for simplicity)
-  // Middleware just ensures authenticated, page checks role
-
-  // Inject current pathname into REQUEST headers so server layouts can read it
-  // via headers(). Setting on response headers doesn't work — layouts read
-  // the forwarded request, not the response.
-  const requestHeaders = new Headers(request.headers)
-  requestHeaders.set('x-pathname', pathname)
-
-  const response = NextResponse.next({
-    request: { headers: requestHeaders },
-  })
-
-  // Preserve Supabase auth cookies from the session refresh
-  supabaseResponse.cookies.getAll().forEach((cookie) => {
-    response.cookies.set(cookie.name, cookie.value)
-  })
-
-  return response
+  return supabaseResponse
 }
 
 export const config = {
