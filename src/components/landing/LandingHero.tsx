@@ -148,16 +148,16 @@ export function LandingHero() {
             href="/signup"
             className={cn(buttonVariants({ size: 'lg' }), 'bg-[var(--obs-teal)] text-background hover:bg-[var(--obs-teal)]/90 glow-teal font-semibold px-8 h-12 text-base group')}
           >
-            Open Intelligence Platform
+            Get Started — $29/month
             <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
-          <Link
-            href="/dashboard"
+          <a
+            href="#pricing"
             className={cn(buttonVariants({ size: 'lg', variant: 'outline' }), 'border-border/60 hover:border-border h-12 text-base px-8')}
           >
-            <Globe2 className="mr-2 w-4 h-4" />
-            View Live Map
-          </Link>
+            <Shield className="mr-2 w-4 h-4" />
+            See what&apos;s included
+          </a>
         </motion.div>
 
         {/* Stats bar */}

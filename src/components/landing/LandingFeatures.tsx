@@ -15,7 +15,7 @@ const FEATURES = [
   {
     icon: Brain,
     title: 'AI-Powered Briefings',
-    description: 'GPT-4 generates daily world summaries, country briefings, conflict analyses, and market intelligence — streamed in real time.',
+    description: 'AI generates daily world summaries, country briefings, conflict analyses, and market intelligence — streamed in real time.',
     color: 'var(--obs-purple)',
   },
   {

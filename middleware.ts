@@ -46,6 +46,9 @@ export async function middleware(request: NextRequest) {
   // Admin routes — check role via profile (done at page level for simplicity)
   // Middleware just ensures authenticated, page checks role
 
+  // Inject current pathname so server layouts can read it
+  supabaseResponse.headers.set('x-pathname', pathname)
+
   return supabaseResponse
 }
 
