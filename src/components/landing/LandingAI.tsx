@@ -45,9 +45,9 @@ export function LandingAI() {
               <span className="text-[var(--obs-purple)]">Intelligence.</span>
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-8">
-              OBSERVE's AI layer uses GPT-4 to synthesize complex global events
-              into clear, structured briefings. Understand not just what happened,
-              but why it matters and what it means.
+              Connect your own Perplexity API key to generate on-demand intelligence
+              briefings powered by Perplexity Sonar. Briefings are generated fresh each
+              time and saved privately to your account — no one else can see them.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

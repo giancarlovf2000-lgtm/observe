@@ -81,10 +81,10 @@ const DEMO_MARKERS = [
 ]
 
 const STATS = [
-  { value: '180+', label: 'Countries monitored' },
-  { value: '15', label: 'Intelligence layers' },
-  { value: 'Real-time', label: 'Data updates' },
-  { value: 'AI-powered', label: 'Briefings' },
+  { value: '9', label: 'Public data sources' },
+  { value: '6+', label: 'Intelligence layers' },
+  { value: 'Daily', label: 'Scheduled updates' },
+  { value: 'BYOK', label: 'Bring your own keys' },
 ]
 
 export function LandingHero() {
@@ -132,9 +132,10 @@ export function LandingHero() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed mb-10"
         >
-          OBSERVE is an advanced global situational awareness platform. Monitor
-          conflicts, weather, shipping, flights, markets, and breaking intelligence
-          from a single, beautiful command center.
+          OBSERVE is a global situational awareness dashboard. It aggregates publicly
+          available data — weather events, market prices, flight tracking, conflict
+          reports, and news — into a single command center. Connect your own free API
+          keys to unlock additional layers.
         </motion.p>
 
         {/* CTAs */}

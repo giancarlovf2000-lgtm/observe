@@ -3,22 +3,19 @@
 import { motion } from 'framer-motion'
 import {
   Sword, Newspaper, CloudLightning, Plane, Ship, TrendingUp,
-  AlertTriangle, Zap, Globe2, Activity, Wifi, Navigation
+  Globe2, Activity, Brain
 } from 'lucide-react'
 
 const LAYERS = [
-  { icon: Sword, label: 'Conflicts & Wars', color: '#ef4444', desc: 'Active conflicts, frozen disputes, border tensions' },
-  { icon: Newspaper, label: 'Breaking News', color: '#f97316', desc: 'Geolocated global news with AI summaries' },
-  { icon: CloudLightning, label: 'Weather & Disasters', color: '#3b82f6', desc: 'Storms, earthquakes, floods, wildfires' },
-  { icon: Plane, label: 'Flight Intelligence', color: '#22d3ee', desc: 'Live air traffic density and route analysis' },
-  { icon: Ship, label: 'Maritime Activity', color: '#06b6d4', desc: 'Shipping lanes, vessels, chokepoints' },
-  { icon: TrendingUp, label: 'Markets & Crypto', color: '#eab308', desc: 'FX, crypto, commodities, macro signals' },
-  { icon: Globe2, label: 'Country Risk', color: '#8b5cf6', desc: 'Risk score overlays for all 180+ nations' },
-  { icon: AlertTriangle, label: 'Sanctions & Regulation', color: '#f59e0b', desc: 'New sanctions, legal changes, compliance events' },
-  { icon: Zap, label: 'Energy & Infrastructure', color: '#10b981', desc: 'Pipeline disruptions, power grid events' },
-  { icon: Activity, label: 'Political Instability', color: '#a78bfa', desc: 'Elections, protests, regime change signals' },
-  { icon: Navigation, label: 'Trade Corridors', color: '#14b8a6', desc: 'Strategic chokepoints, route disruptions' },
-  { icon: Wifi, label: 'AI Insights', color: '#d946ef', desc: 'AI-surfaced anomalies and pattern alerts' },
+  { icon: Sword,         label: 'Conflicts & Wars',    color: '#ef4444', desc: 'Powered by ACLED — requires your free ACLED account', included: false },
+  { icon: Newspaper,    label: 'Breaking News',        color: '#f97316', desc: 'Powered by NewsAPI — requires your free NewsAPI key', included: false },
+  { icon: CloudLightning,label: 'Weather & Disasters', color: '#3b82f6', desc: 'Earthquakes (USGS), storms & floods (NOAA, OpenMeteo) — included', included: true },
+  { icon: Plane,        label: 'Flight Tracking',      color: '#22d3ee', desc: 'Flight positions via OpenSky Network — included', included: true },
+  { icon: Ship,         label: 'Vessel Tracking',      color: '#06b6d4', desc: 'Vessel positions via OpenSky Network — included', included: true },
+  { icon: TrendingUp,   label: 'Markets & Crypto',     color: '#eab308', desc: 'Crypto prices (CoinGecko) and FX rates (ExchangeRate) — included', included: true },
+  { icon: Activity,     label: 'Political Events',     color: '#a78bfa', desc: 'Political events from ACLED data — requires your free ACLED account', included: false },
+  { icon: Globe2,       label: 'Country Profiles',     color: '#8b5cf6', desc: 'Country-level pages with aggregated event data — included', included: true },
+  { icon: Brain,        label: 'AI Briefings',         color: '#d946ef', desc: 'On-demand briefings via Perplexity Sonar — requires your Perplexity API key', included: false },
 ]
 
 export function LandingLayers() {
@@ -40,15 +37,15 @@ export function LandingLayers() {
             <div className="w-8 h-px bg-[var(--obs-teal)]" />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            15 layers. One unified view.
+            9 data layers. All from public sources.
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Each layer represents a different dimension of global reality.
-            Activate them individually or combine them for cross-domain intelligence.
+            Each layer is backed by a real public API. Some are included in your
+            subscription; others unlock when you connect your own free credentials.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {LAYERS.map((layer, i) => (
             <motion.div
               key={layer.label}
@@ -65,11 +62,20 @@ export function LandingLayers() {
                 >
                   <layer.icon className="w-4 h-4" style={{ color: layer.color }} />
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-foreground group-hover:text-[var(--obs-teal)] transition-colors leading-tight">
-                    {layer.label}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div className="text-sm font-medium text-foreground group-hover:text-[var(--obs-teal)] transition-colors leading-tight">
+                      {layer.label}
+                    </div>
+                    <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded-full flex-shrink-0 ${
+                      layer.included
+                        ? 'bg-[var(--obs-teal)]/15 text-[var(--obs-teal)] border border-[var(--obs-teal)]/25'
+                        : 'bg-[var(--obs-amber)]/15 text-[var(--obs-amber)] border border-[var(--obs-amber)]/25'
+                    }`}>
+                      {layer.included ? 'INCLUDED' : 'YOUR KEY'}
+                    </span>
                   </div>
-                  <div className="text-xs text-muted-foreground mt-0.5 leading-tight">
+                  <div className="text-xs text-muted-foreground leading-tight">
                     {layer.desc}
                   </div>
                 </div>

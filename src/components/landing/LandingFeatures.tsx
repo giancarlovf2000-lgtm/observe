@@ -9,55 +9,55 @@ const FEATURES = [
   {
     icon: Map,
     title: 'Interactive World Map',
-    description: 'Full-screen, GPU-accelerated world map with 15 intelligence layers. Pan, zoom, and click any event to reveal deep contextual analysis.',
+    description: 'Full-screen world map with toggleable data layers. Pan, zoom, and click any event to see source details, location context, and related events.',
     color: 'var(--obs-teal)',
   },
   {
     icon: Brain,
-    title: 'AI-Powered Briefings',
-    description: 'AI generates daily world summaries, country briefings, conflict analyses, and market intelligence — streamed in real time.',
+    title: 'AI Briefings (your Perplexity key)',
+    description: 'Connect your own Perplexity API key to generate on-demand briefings on any country, conflict, or region. Streamed directly to your dashboard.',
     color: 'var(--obs-purple)',
   },
   {
     icon: Layers,
-    title: '15 Intelligence Layers',
-    description: 'Toggle conflicts, news, weather, flights, shipping, markets, energy, and more. Mix layers for powerful cross-domain situational views.',
+    title: 'Multiple Data Layers',
+    description: 'Toggle weather events, flight tracking, market prices, conflict data, and news. Each layer is backed by a real public data source.',
     color: 'var(--obs-blue)',
   },
   {
     icon: Bell,
     title: 'Custom Alerts',
-    description: 'Create intelligent alerts for any country, conflict, asset, or keyword. Get notified when the world changes in ways that matter to you.',
+    description: 'Create rule-based alerts for specific countries or keywords. Get notified when matching events are ingested into your dashboard.',
     color: 'var(--obs-amber)',
   },
   {
     icon: BookOpen,
-    title: 'Country Intelligence Profiles',
-    description: 'Deep profiles for every nation: active conflicts, economic signals, weather events, shipping activity, and AI-generated briefings.',
+    title: 'Country Profiles',
+    description: 'Browse country-level pages showing recent events, weather activity, market data, and any briefings you have generated for that country.',
     color: 'var(--obs-teal)',
   },
   {
     icon: BarChart3,
-    title: 'Market & Currency Intelligence',
-    description: 'Monitor FX, cryptocurrency, commodities, and macro signals. Understand the geopolitical forces moving markets.',
+    title: 'Market & Currency Prices',
+    description: 'Daily-updated crypto prices from CoinGecko and FX rates from ExchangeRate API. No credential needed — included in your subscription.',
     color: 'var(--obs-green)',
   },
   {
     icon: Globe2,
-    title: 'Conflict Monitoring',
-    description: 'Track active wars, frozen conflicts, border tensions, and escalation signals. Timeline views, party analysis, and implication briefings.',
+    title: 'Conflict Tracking (ACLED key)',
+    description: 'Connect your free ACLED account to pull armed conflict event data. Events are stored in your account and visible only to you.',
     color: 'var(--obs-red)',
   },
   {
     icon: Crosshair,
-    title: 'Saved Watchlists',
-    description: 'Build personal intelligence workspaces around the countries, assets, and issues you care about. Your world, filtered for you.',
+    title: 'Watchlists & Workspaces',
+    description: 'Save countries, events, and topics to personal watchlists. Organize your monitoring into workspaces for different regions or topics.',
     color: 'var(--obs-purple)',
   },
   {
     icon: Shield,
-    title: 'Lawful & Ethical',
-    description: 'Built exclusively on public, open, and legally accessible data sources. No private surveillance. No hacking. Intelligence through transparency.',
+    title: 'Public sources only',
+    description: 'OBSERVE uses exclusively public, open, and legally accessible data sources. No private surveillance, no scraping of restricted content.',
     color: 'var(--obs-amber)',
   },
 ]
@@ -93,8 +93,9 @@ export function LandingFeatures() {
             Everything you need to understand the world
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            OBSERVE fuses data from dozens of public sources into one coherent,
-            AI-enhanced view of global reality.
+            OBSERVE aggregates data from public APIs into one dashboard. Some
+            features work out of the box; others unlock when you connect your own
+            free API credentials.
           </p>
         </motion.div>
 
