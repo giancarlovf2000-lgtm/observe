@@ -23,7 +23,7 @@ export class USGSAdapter extends BaseAdapter {
   readonly key = 'usgs'
 
   async fetchRaw(): Promise<RawPayload[]> {
-    const url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson'
+    const url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson'
     const res = await fetch(url, { next: { revalidate: 0 } })
     if (!res.ok) throw new Error(`USGS fetch failed: ${res.status}`)
 

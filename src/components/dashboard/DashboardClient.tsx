@@ -273,10 +273,29 @@ export function DashboardClient({
     return () => clearInterval(id)
   }, [])
 
-  function handleRefresh() {
+  // Auto-refresh data every 60 seconds
+  useEffect(() => {
+    const id = setInterval(() => {
+      startTransition(() => {
+        router.refresh()
+        setLastRefreshed(new Date())
+      })
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [router])
+
+  async function handleRefresh() {
+    startTransition(() => {
+      setLastRefreshed(new Date())
+    })
+    // Trigger ingestion for included sources, then reload
+    try {
+      await fetch('/api/refresh', { method: 'POST' })
+    } catch {
+      // non-fatal
+    }
     startTransition(() => {
       router.refresh()
-      setLastRefreshed(new Date())
     })
   }
 
