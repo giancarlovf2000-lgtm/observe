@@ -6,30 +6,25 @@ export const metadata: Metadata = { title: 'News Intelligence' }
 
 export default async function NewsPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: cred } = await supabase
-    .from('api_credentials')
-    .select('is_active')
-    .eq('user_id', user!.id)
-    .eq('service', 'newsapi')
-    .single()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
-  const hasCredential = cred?.is_active === true
+  const { data: newsEvents } = await supabase
+    .from('global_events')
+    .select('id, type, title, summary, severity, country_id, region, occurred_at, tags, metadata')
+    .eq('type', 'news')
+    .eq('is_active', true)
+    .gte('occurred_at', sevenDaysAgo)
+    .order('occurred_at', { ascending: false })
+    .limit(60)
 
-  const { data: newsEvents } = hasCredential
-    ? await supabase
-        .from('global_events')
-        .select(`
-          *,
-          news_articles ( headline, source_name, source_url, author, image_url, sentiment, topics, published_at )
-        `)
-        .eq('type', 'news')
-        .eq('is_active', true)
-        .eq('user_id', user!.id)
-        .order('occurred_at', { ascending: false })
-        .limit(40)
-    : { data: [] }
+  // Deduplicate by title (same story from multiple outlets)
+  const seenTitles = new Set<string>()
+  const deduped = (newsEvents ?? []).filter(e => {
+    if (seenTitles.has(e.title)) return false
+    seenTitles.add(e.title)
+    return true
+  })
 
-  return <NewsClient events={newsEvents ?? []} hasCredential={hasCredential} />
+  return <NewsClient events={deduped} />
 }

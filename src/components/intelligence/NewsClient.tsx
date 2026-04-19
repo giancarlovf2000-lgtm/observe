@@ -1,20 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Newspaper, Clock, ExternalLink, Globe2, Search,
-  TrendingUp, Zap, Tag, ChevronRight
+  TrendingUp, Zap, Tag, ChevronRight, RefreshCw
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
 import { TranslateBanner } from '@/components/shared/TranslateBanner'
 import { usePageTranslation } from '@/hooks/usePageTranslation'
 import { formatDistanceToNow } from 'date-fns'
-import { cn } from '@/lib/utils'
 import type { SeverityLevel } from '@/types'
 
 interface NewsEvent {
@@ -190,9 +192,20 @@ function NewsCard({ event, index }: { event: NewsEvent; index: number }) {
   )
 }
 
-export function NewsClient({ events, hasCredential = true }: { events: NewsEvent[]; hasCredential?: boolean }) {
-  const [search, setSearch]           = useState('')
-  const [activeTopic, setActiveTopic] = useState<string | null>(null)
+export function NewsClient({ events }: { events: NewsEvent[] }) {
+  const [search, setSearch]             = useState('')
+  const [activeTopic, setActiveTopic]   = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isPending, startTransition]    = useTransition()
+  const router = useRouter()
+
+  async function handleRefresh() {
+    if (isRefreshing || isPending) return
+    setIsRefreshing(true)
+    try { await fetch('/api/refresh', { method: 'POST' }) } catch { /* non-fatal */ }
+    startTransition(() => { router.refresh() })
+    setIsRefreshing(false)
+  }
 
   // Translation
   const translatableItems = events.map(e => ({ title: e.title, summary: e.summary ?? undefined }))
@@ -220,26 +233,6 @@ export function NewsClient({ events, hasCredential = true }: { events: NewsEvent
 
   const [featured, ...rest] = filtered
 
-  if (!hasCredential) {
-    return (
-      <div className="p-6 max-w-xl mx-auto mt-20 text-center space-y-4">
-        <Newspaper className="w-10 h-10 text-orange-400 mx-auto opacity-50" />
-        <h2 className="text-lg font-bold text-foreground">Connect NewsAPI to unlock News Intelligence</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          News Intelligence is powered by your own free NewsAPI key. Connect it once and live geolocated news stories will appear here automatically.
-        </p>
-        <ol className="text-left text-xs text-muted-foreground space-y-1.5 bg-white/5 rounded-xl p-4 border border-border/30">
-          <li>1. Go to <a href="https://newsapi.org/register" target="_blank" rel="noopener noreferrer" className="text-[var(--obs-teal)] hover:underline">newsapi.org/register</a> and create a free account</li>
-          <li>2. Copy your API key from the dashboard</li>
-          <li>3. Go to <a href="/settings/integrations" className="text-[var(--obs-teal)] hover:underline">Settings → Integrations</a> and paste it under NewsAPI</li>
-        </ol>
-        <a href="/settings/integrations" className="inline-block mt-2 px-4 py-2 rounded-lg bg-[var(--obs-teal)] text-background text-sm font-medium hover:bg-[var(--obs-teal)]/90">
-          Go to Integrations →
-        </a>
-      </div>
-    )
-  }
-
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-5">
       {/* Header */}
@@ -254,10 +247,21 @@ export function NewsClient({ events, hasCredential = true }: { events: NewsEvent
             <span>{events.length} geolocated stories</span>
           </div>
         </div>
-        <Link href="/map" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--obs-teal)] hover:underline flex-shrink-0">
-          <TrendingUp className="w-3.5 h-3.5" />
-          View on map
-        </Link>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Button
+            variant="outline" size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing || isPending}
+            className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5 gap-1.5"
+          >
+            <RefreshCw className={cn('w-3.5 h-3.5', (isRefreshing || isPending) && 'animate-spin')} />
+            <span className="hidden sm:inline text-xs">{(isRefreshing || isPending) ? 'Refreshing…' : 'Refresh'}</span>
+          </Button>
+          <Link href="/map" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--obs-teal)] hover:underline">
+            <TrendingUp className="w-3.5 h-3.5" />
+            View on map
+          </Link>
+        </div>
       </div>
 
       {/* Translate banner */}

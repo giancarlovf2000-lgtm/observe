@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Plane, Ship, Navigation, Anchor, MapPin, Clock, Activity, Globe2 } from 'lucide-react'
+import { Plane, Ship, Navigation, Anchor, MapPin, Clock, Activity, Globe2, RefreshCw, WifiOff } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatDistanceToNow } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useT } from '@/hooks/useT'
@@ -165,12 +167,24 @@ function VesselRow({ vessel, index }: { vessel: Vessel; index: number }) {
 }
 
 export function TransportClient({ flights, vessels }: { flights: Flight[]; vessels: Vessel[] }) {
-  const [tab, setTab] = useState<Tab>('flights')
+  const [tab, setTab]                   = useState<Tab>('flights')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isPending, startTransition]    = useTransition()
+  const router = useRouter()
   const { t } = useT()
   const tr = t('transport')
 
+  async function handleRefresh() {
+    if (isRefreshing || isPending) return
+    setIsRefreshing(true)
+    try { await fetch('/api/refresh', { method: 'POST' }) } catch { /* non-fatal */ }
+    startTransition(() => { router.refresh() })
+    setIsRefreshing(false)
+  }
+
   const airborne = flights.filter(f => !f.on_ground)
   const grounded = flights.filter(f => f.on_ground)
+  const noData = flights.length === 0 && vessels.length === 0
 
   const tankers = vessels.filter(v => v.is_tanker || v.vessel_type?.toLowerCase() === 'tanker')
   const cargo = vessels.filter(v => v.vessel_type?.toLowerCase() === 'cargo')
@@ -178,13 +192,36 @@ export function TransportClient({ flights, vessels }: { flights: Flight[]; vesse
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Navigation className="w-5 h-5 text-[var(--obs-teal)]" />
-          {tr.title}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-0.5">{tr.subtitle}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Navigation className="w-5 h-5 text-[var(--obs-teal)]" />
+            {tr.title}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{tr.subtitle} — last 7 days</p>
+        </div>
+        <Button
+          variant="outline" size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing || isPending}
+          className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5 gap-1.5 flex-shrink-0"
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', (isRefreshing || isPending) && 'animate-spin')} />
+          <span className="hidden sm:inline text-xs">{(isRefreshing || isPending) ? 'Refreshing…' : 'Refresh'}</span>
+        </Button>
       </div>
+
+      {/* No data in last 7 days */}
+      {noData && (
+        <div className="glass rounded-xl p-8 border border-white/5 text-center space-y-3">
+          <WifiOff className="w-8 h-8 mx-auto text-muted-foreground/30" />
+          <p className="text-sm font-medium text-foreground/70">No flight or vessel data in the last 7 days</p>
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-sm mx-auto">
+            OpenSky Network requires credentials for reliable data. Connect your OpenSky account via{' '}
+            <a href="/settings/integrations" className="text-[var(--obs-teal)] hover:underline">Settings → Integrations</a>.
+          </p>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

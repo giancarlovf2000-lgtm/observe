@@ -160,13 +160,25 @@ export async function runIngestionPipeline(
           ...(userId ? { user_id: userId } : {}),
         }))
 
-        // Deduplicate within the batch (parallel queries in adapter may produce duplicates)
+        // Deduplicate within the batch by external_id (parallel queries may produce duplicates)
         const seenExternalIds = new Set<string>()
-        const uniqueRows = rows.filter(r => {
+        const deduped = rows.filter(r => {
           if (seenExternalIds.has(r.external_id)) return false
           seenExternalIds.add(r.external_id)
           return true
         })
+
+        // Also deduplicate by title within last 24h to avoid same story from multiple outlets
+        const candidateTitles = deduped.map(r => r.title)
+        const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        const { data: existingByTitle } = await supabase
+          .from('global_events')
+          .select('title')
+          .eq('source_id', sourceId)
+          .in('title', candidateTitles)
+          .gte('occurred_at', since24h)
+        const existingTitles = new Set((existingByTitle ?? []).map((r: { title: string }) => r.title))
+        const uniqueRows = deduped.filter(r => !existingTitles.has(r.title))
 
         const { data: inserted, error } = await supabase
           .from('global_events')

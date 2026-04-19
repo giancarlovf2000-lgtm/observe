@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Json } from '@/types/database'
 import {
   Cloud, Wind, Waves, Flame, Mountain, Zap, Droplets,
-  Thermometer, AlertTriangle, Globe2, Clock, Activity
+  Thermometer, AlertTriangle, Globe2, Clock, Activity, RefreshCw
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { SeverityBadge } from '@/components/shared/SeverityBadge'
 import { PulseIndicator } from '@/components/shared/PulseIndicator'
 import { TranslateBanner } from '@/components/shared/TranslateBanner'
@@ -193,7 +195,18 @@ function StatsBar({ events, disasters }: { events: WeatherEvent[]; disasters: Di
 }
 
 export function WeatherClient({ events, disasters }: { events: WeatherEvent[]; disasters: DisasterEvent[] }) {
-  const [filter, setFilter] = useState<WeatherFilter>('all')
+  const [filter, setFilter]             = useState<WeatherFilter>('all')
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isPending, startTransition]    = useTransition()
+  const router = useRouter()
+
+  async function handleRefresh() {
+    if (isRefreshing || isPending) return
+    setIsRefreshing(true)
+    try { await fetch('/api/refresh', { method: 'POST' }) } catch { /* non-fatal */ }
+    startTransition(() => { router.refresh() })
+    setIsRefreshing(false)
+  }
 
   // Translation
   const translatableItems = events.map(e => ({ title: e.title, summary: e.summary ?? undefined }))
@@ -223,15 +236,26 @@ export function WeatherClient({ events, disasters }: { events: WeatherEvent[]; d
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <Cloud className="w-5 h-5 text-[var(--obs-blue)]" />
-          Weather & Disaster Monitoring
-        </h1>
-        <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-          <PulseIndicator color="var(--obs-blue)" />
-          <span>Real-time extreme weather, natural disasters &amp; humanitarian emergencies</span>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Cloud className="w-5 h-5 text-[var(--obs-blue)]" />
+            Weather & Disaster Monitoring
+          </h1>
+          <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+            <PulseIndicator color="var(--obs-blue)" />
+            <span>Extreme weather, natural disasters &amp; humanitarian emergencies — last 7 days</span>
+          </div>
         </div>
+        <Button
+          variant="outline" size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing || isPending}
+          className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5 gap-1.5 flex-shrink-0"
+        >
+          <RefreshCw className={cn('w-3.5 h-3.5', (isRefreshing || isPending) && 'animate-spin')} />
+          <span className="hidden sm:inline text-xs">{(isRefreshing || isPending) ? 'Refreshing…' : 'Refresh'}</span>
+        </Button>
       </div>
 
       {/* Translate banner */}
