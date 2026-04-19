@@ -20,7 +20,7 @@ export async function POST() {
   lastRun['included'] = now
 
   // Trigger the three included cron jobs in parallel via internal fetch
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.observe.center'
+  const base = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.observe.center').trim()
   const secret = process.env.CRON_SECRET ?? ''
   const headers = { Authorization: `Bearer ${secret}` }
 

@@ -252,9 +252,10 @@ export function DashboardClient({
 
   const criticalCount = recentEvents.filter(e => e.severity === 'critical').length
   const newsCount     = recentEvents.filter(e => e.type === 'news').length
-  const [clockStr, setClockStr]       = useState('')
+  const [clockStr, setClockStr]         = useState('')
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
-  const [isPending, startTransition]  = useTransition()
+  const [isRefreshing, setIsRefreshing]   = useState(false)
+  const [isPending, startTransition]      = useTransition()
   const router = useRouter()
 
   // Translate event titles/summaries from DB
@@ -285,10 +286,8 @@ export function DashboardClient({
   }, [router])
 
   async function handleRefresh() {
-    startTransition(() => {
-      setLastRefreshed(new Date())
-    })
-    // Trigger ingestion for included sources, then reload
+    if (isRefreshing || isPending) return
+    setIsRefreshing(true)
     try {
       await fetch('/api/refresh', { method: 'POST' })
     } catch {
@@ -296,7 +295,9 @@ export function DashboardClient({
     }
     startTransition(() => {
       router.refresh()
+      setLastRefreshed(new Date())
     })
+    setIsRefreshing(false)
   }
 
   // Determine global threat level from stats
@@ -345,11 +346,11 @@ export function DashboardClient({
                 variant="outline"
                 size="sm"
                 onClick={handleRefresh}
-                disabled={isPending}
+                disabled={isRefreshing || isPending}
                 className="border-border/50 text-muted-foreground hover:text-foreground h-8 px-2.5 gap-1.5"
               >
-                <RefreshCw className={cn('w-3.5 h-3.5', isPending && 'animate-spin')} />
-                <span className="hidden sm:inline text-xs">{isPending ? db.refreshing : db.refresh}</span>
+                <RefreshCw className={cn('w-3.5 h-3.5', (isRefreshing || isPending) && 'animate-spin')} />
+                <span className="hidden sm:inline text-xs">{(isRefreshing || isPending) ? db.refreshing : db.refresh}</span>
               </Button>
               <Link
                 href="/map"

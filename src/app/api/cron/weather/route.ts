@@ -13,16 +13,16 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const [usgsResult, reliefResult, noaaResult] = await Promise.allSettled([
-    runIngestionPipeline(new USGSAdapter(),       'usgs'),
-    runIngestionPipeline(new OpenMeteoAdapter(),  'reliefweb'),
-    runIngestionPipeline(new NOAAWeatherAdapter(), 'noaaweather'),
+  const [usgsResult, openmeteoResult, noaaResult] = await Promise.allSettled([
+    runIngestionPipeline(new USGSAdapter(),        'usgs'),
+    runIngestionPipeline(new OpenMeteoAdapter(),   'openmeteo'),
+    runIngestionPipeline(new NOAAWeatherAdapter(),  'noaaweather'),
   ])
 
   return NextResponse.json({
-    ok:         true,
-    usgs:       usgsResult.status    === 'fulfilled' ? usgsResult.value    : { error: String(usgsResult.reason)    },
-    reliefweb:  reliefResult.status  === 'fulfilled' ? reliefResult.value  : { error: String(reliefResult.reason)  },
-    noaaweather: noaaResult.status   === 'fulfilled' ? noaaResult.value    : { error: String(noaaResult.reason)    },
+    ok:          true,
+    usgs:        usgsResult.status      === 'fulfilled' ? usgsResult.value      : { error: String(usgsResult.reason)      },
+    openmeteo:   openmeteoResult.status === 'fulfilled' ? openmeteoResult.value : { error: String(openmeteoResult.reason) },
+    noaaweather: noaaResult.status      === 'fulfilled' ? noaaResult.value      : { error: String(noaaResult.reason)      },
   })
 }
