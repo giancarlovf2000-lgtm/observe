@@ -28,8 +28,9 @@ interface NewsEvent {
   region: string | null
   tags: string[]
   occurred_at: string
-  source_url: string | null
-  news_articles: Array<{
+  metadata?: Record<string, unknown> | null
+  source_url?: string | null
+  news_articles?: Array<{
     headline: string
     source_name: string
     source_url: string
