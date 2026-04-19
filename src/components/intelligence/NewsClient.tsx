@@ -347,6 +347,21 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Attribution — required by GDELT Terms of Use */}
+      <div className="pt-2 border-t border-border/10 text-[10px] text-muted-foreground/40 flex items-center gap-1">
+        <Globe2 className="w-3 h-3 flex-shrink-0" />
+        News intelligence powered by the{' '}
+        <a
+          href="https://www.gdeltproject.org"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline hover:text-muted-foreground transition-colors"
+        >
+          GDELT Project
+        </a>
+        . Data provided under open license for any use with attribution.
+      </div>
     </div>
   )
 }

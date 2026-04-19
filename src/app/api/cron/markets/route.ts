@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { CoinGeckoAdapter } from '@/lib/ingestion/adapters/coingecko'
+import { CoinCapAdapter } from '@/lib/ingestion/adapters/coincap'
 import { ExchangeRateAdapter } from '@/lib/ingestion/adapters/exchangerate'
 import { runIngestionPipeline } from '@/lib/ingestion/pipeline'
 
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
   try {
     const [crypto, fx] = await Promise.allSettled([
-      runIngestionPipeline(new CoinGeckoAdapter(), 'coingecko'),
+      runIngestionPipeline(new CoinCapAdapter(), 'coincap'),
       runIngestionPipeline(new ExchangeRateAdapter(), 'exchangerate'),
     ])
 

@@ -271,6 +271,19 @@ export function MarketsClient({ assets, marketEvents }: { assets: MarketAsset[];
           </div>
         </div>
       )}
+
+      {/* Attribution — required by data providers */}
+      <div className="pt-2 border-t border-border/10 text-[10px] text-muted-foreground/40">
+        Crypto prices provided by{' '}
+        <a href="https://coincap.io" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground transition-colors">
+          CoinCap
+        </a>
+        . FX rates provided by{' '}
+        <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground transition-colors">
+          ExchangeRate-API
+        </a>
+        . For informational purposes only — not financial advice.
+      </div>
     </div>
   )
 }

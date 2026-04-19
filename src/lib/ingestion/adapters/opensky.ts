@@ -21,15 +21,16 @@ export class OpenSkyAdapter extends BaseAdapter {
   readonly key = 'opensky'
 
   async fetchRaw(): Promise<RawPayload[]> {
-    const headers: Record<string, string> = {}
-    // BYOK: prefer passed credentials, fall back to env vars for shared cron
-    const user = this.credentials.username ?? process.env.OPENSKY_USERNAME
-    const pass = this.credentials.password ?? process.env.OPENSKY_PASSWORD
-    if (user && pass) {
-      headers['Authorization'] = `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`
+    // OpenSky requires a commercial license for paid SaaS use.
+    // Only proceed if the user has provided their own credentials (BYOK).
+    const user = this.credentials.username
+    const pass = this.credentials.password
+    if (!user || !pass) return []
+
+    const headers: Record<string, string> = {
+      'Authorization': `Basic ${Buffer.from(`${user}:${pass}`).toString('base64')}`,
     }
 
-    // Get a bounding box covering Europe and Middle East — high interest area
     const url = 'https://opensky-network.org/api/states/all?lamin=20&lomin=-10&lamax=60&lomax=60'
 
     try {

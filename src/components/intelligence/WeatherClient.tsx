@@ -431,6 +431,12 @@ export function WeatherClient({ events, disasters }: { events: WeatherEvent[]; d
           </div>
         </div>
       </div>
+
+      {/* Attribution — NOAA/NWS (public domain), USGS (public domain), OpenWeatherMap (ODbL) */}
+      <div className="pt-2 border-t border-border/10 text-[10px] text-muted-foreground/40">
+        Weather alerts: NOAA/NWS (public domain) · Earthquakes: USGS (public domain) ·
+        Weather data © <a href="https://openweathermap.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground transition-colors">OpenWeather</a>
+      </div>
     </div>
   )
 }
