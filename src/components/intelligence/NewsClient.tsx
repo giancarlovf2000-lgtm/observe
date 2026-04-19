@@ -246,6 +246,15 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
           <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
             <PulseIndicator color="orange" />
             <span>{events.length} geolocated stories</span>
+            <span className="text-muted-foreground/40">·</span>
+            <a
+              href="https://www.gdeltproject.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors underline"
+            >
+              Powered by GDELT
+            </a>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -348,19 +357,9 @@ export function NewsClient({ events }: { events: NewsEvent[] }) {
         )}
       </AnimatePresence>
 
-      {/* Attribution — required by GDELT Terms of Use */}
-      <div className="pt-2 border-t border-border/10 text-[10px] text-muted-foreground/40 flex items-center gap-1">
-        <Globe2 className="w-3 h-3 flex-shrink-0" />
-        News intelligence powered by the{' '}
-        <a
-          href="https://www.gdeltproject.org"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline hover:text-muted-foreground transition-colors"
-        >
-          GDELT Project
-        </a>
-        . Data provided under open license for any use with attribution.
+      {/* Attribution footer */}
+      <div className="pt-2 border-t border-border/10 text-[10px] text-muted-foreground/30 text-center">
+        News data provided by the <a href="https://www.gdeltproject.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-muted-foreground/60 transition-colors">GDELT Project</a> — open license, all use permitted with attribution.
       </div>
     </div>
   )

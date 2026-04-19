@@ -15,11 +15,11 @@ interface GDELTResponse {
   articles?: GDELTArticle[]
 }
 
-// Query terms for geopolitical intelligence events (run sequentially with delays due to GDELT rate limit)
+// Query terms — sourcelang:english ensures only English-language sources are returned
 const GDELT_QUERIES = [
-  'conflict attack war military',
-  'political crisis protest election sanctions',
-  'humanitarian disaster emergency flood',
+  'conflict attack war military sourcelang:english',
+  'political crisis protest election sanctions sourcelang:english',
+  'humanitarian disaster emergency flood sourcelang:english',
 ]
 
 export class GDELTAdapter extends BaseAdapter {
