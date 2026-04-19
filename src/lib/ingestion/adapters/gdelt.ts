@@ -15,12 +15,11 @@ interface GDELTResponse {
   articles?: GDELTArticle[]
 }
 
-// Query terms for geopolitical intelligence events
+// Query terms for geopolitical intelligence events (run sequentially with delays due to GDELT rate limit)
 const GDELT_QUERIES = [
-  'conflict military attack',
-  'political crisis election protest',
-  'humanitarian disaster emergency',
-  'sanctions diplomatic',
+  'conflict attack war military',
+  'political crisis protest election sanctions',
+  'humanitarian disaster emergency flood',
 ]
 
 export class GDELTAdapter extends BaseAdapter {
@@ -30,14 +29,18 @@ export class GDELTAdapter extends BaseAdapter {
     const results: RawPayload[] = []
     const seen = new Set<string>()
 
-    for (const query of GDELT_QUERIES) {
+    for (let i = 0; i < GDELT_QUERIES.length; i++) {
+      if (i > 0) await new Promise(r => setTimeout(r, 6000)) // respect 1 req/5s limit
+      const query = GDELT_QUERIES[i]
       try {
         const encoded = encodeURIComponent(query)
         const url = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encoded}&mode=artlist&maxrecords=25&format=json&timespan=24h&sort=HybridRel`
         const res = await fetch(url, { next: { revalidate: 0 } })
         if (!res.ok) continue
 
-        const data = await res.json() as GDELTResponse
+        const text = await res.text()
+        if (!text.trim().startsWith('{')) continue // rate limit response is plain text
+        const data = JSON.parse(text) as GDELTResponse
         for (const article of data.articles ?? []) {
           if (seen.has(article.url)) continue
           seen.add(article.url)
