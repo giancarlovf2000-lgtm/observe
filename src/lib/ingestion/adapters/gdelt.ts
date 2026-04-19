@@ -69,15 +69,21 @@ export class GDELTAdapter extends BaseAdapter {
 }
 
 function parseGDELTDate(dateStr: string): string {
-  // GDELT format: YYYYMMDDHHMMSS
-  if (dateStr.length >= 14) {
-    const y = dateStr.slice(0, 4)
-    const mo = dateStr.slice(4, 6)
-    const d = dateStr.slice(6, 8)
-    const h = dateStr.slice(8, 10)
-    const m = dateStr.slice(10, 12)
-    const s = dateStr.slice(12, 14)
-    return `${y}-${mo}-${d}T${h}:${m}:${s}Z`
-  }
+  try {
+    // GDELT format: YYYYMMDDHHMMSS (14 pure digits)
+    if (/^\d{14}/.test(dateStr)) {
+      const y  = dateStr.slice(0, 4)
+      const mo = dateStr.slice(4, 6)
+      const d  = dateStr.slice(6, 8)
+      const h  = dateStr.slice(8, 10)
+      const m  = dateStr.slice(10, 12)
+      const s  = dateStr.slice(12, 14)
+      const dt = new Date(`${y}-${mo}-${d}T${h}:${m}:${s}Z`)
+      if (!isNaN(dt.getTime())) return dt.toISOString()
+    }
+    // Fallback: try parsing as-is
+    const dt = new Date(dateStr)
+    if (!isNaN(dt.getTime())) return dt.toISOString()
+  } catch { /* fall through */ }
   return new Date().toISOString()
 }
