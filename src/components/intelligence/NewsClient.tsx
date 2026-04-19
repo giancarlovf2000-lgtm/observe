@@ -28,7 +28,7 @@ interface NewsEvent {
   region: string | null
   tags: string[]
   occurred_at: string
-  metadata?: Record<string, unknown> | null
+  metadata?: unknown
   source_url?: string | null
   news_articles?: Array<{
     headline: string
