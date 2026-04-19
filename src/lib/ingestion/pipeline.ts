@@ -160,9 +160,17 @@ export async function runIngestionPipeline(
           ...(userId ? { user_id: userId } : {}),
         }))
 
+        // Deduplicate within the batch (parallel queries in adapter may produce duplicates)
+        const seenExternalIds = new Set<string>()
+        const uniqueRows = rows.filter(r => {
+          if (seenExternalIds.has(r.external_id)) return false
+          seenExternalIds.add(r.external_id)
+          return true
+        })
+
         const { data: inserted, error } = await supabase
           .from('global_events')
-          .insert(rows)
+          .upsert(uniqueRows, { onConflict: 'source_id,external_id', ignoreDuplicates: true })
           .select('id')
 
         if (error) {
