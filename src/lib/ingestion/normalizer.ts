@@ -114,7 +114,6 @@ export function normalize(payload: RawPayload, _sourceId: string): NormalizedEve
 
 function normalizeCountryCode(code: string | null | undefined): string | null {
   if (!code) return null
-  // ISO3 → ISO2 would need a lookup table; for now just return 2-char codes
-  const clean = code.toLowerCase().replace(/[^a-z]/g, '')
+  const clean = code.replace(/[^a-zA-Z]/g, '').toUpperCase()
   return clean.length >= 2 ? clean.slice(0, 2) : null
 }

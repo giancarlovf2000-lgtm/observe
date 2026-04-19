@@ -130,13 +130,24 @@ export async function runIngestionPipeline(
 
       const toInsert = regularEvents.filter(e => newIds.has(e.external_id))
       if (toInsert.length > 0) {
+        // Validate country_ids against the countries table — null out any not present
+        const candidateCountryIds = [...new Set(toInsert.map(e => e.country_id).filter(Boolean) as string[])]
+        let validCountryIds = new Set<string>()
+        if (candidateCountryIds.length > 0) {
+          const { data: validRows } = await supabase
+            .from('countries')
+            .select('id')
+            .in('id', candidateCountryIds)
+          validCountryIds = new Set((validRows ?? []).map(r => r.id))
+        }
+
         const rows = toInsert.map(e => ({
           type: e.type,
           title: e.title,
           summary: e.summary,
           body: e.body,
           severity: e.severity,
-          country_id: e.country_id,
+          country_id: e.country_id && validCountryIds.has(e.country_id) ? e.country_id : null,
           region: e.region,
           lat: e.lat,
           lng: e.lng,

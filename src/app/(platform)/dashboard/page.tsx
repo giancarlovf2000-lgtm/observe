@@ -8,12 +8,12 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch recent high-severity events (more items for the ticker + feed)
+  // Fetch recent events — include moderate+ so GDELT news and weather alerts appear
   const { data: recentEvents } = await supabase
     .from('global_events')
     .select('id, type, title, summary, severity, country_id, region, lat, lng, occurred_at, tags')
     .eq('is_active', true)
-    .in('severity', ['high', 'critical'])
+    .in('severity', ['moderate', 'high', 'critical'])
     .order('occurred_at', { ascending: false })
     .limit(20)
 
