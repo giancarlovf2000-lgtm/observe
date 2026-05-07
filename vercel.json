@@ -30,6 +30,15 @@
           "value": "no-store"
         }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://siteforge-dmart.vercel.app https://*.vercel.app"
+        }
+      ]
     }
   ]
 }
