@@ -24,13 +24,20 @@ export function LandingFooter() {
           <div>
             <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Platform</div>
             <ul className="space-y-2">
-              {['Map', 'Briefings', 'Conflicts', 'Markets', 'Weather', 'Transport'].map((item) => (
-                <li key={item}>
+              {[
+                { name: 'Map', byok: true },
+                { name: 'Briefings', byok: true },
+                { name: 'Conflicts', byok: false },
+                { name: 'Markets', byok: true },
+                { name: 'Weather', byok: true },
+                { name: 'Transport', byok: false }
+              ].map((item) => (
+                <li key={item.name}>
                   <Link
-                    href={`/${item.toLowerCase()}`}
+                    href={`/${item.name.toLowerCase()}`}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    {item}
+                    {item.name}{item.byok && <span className="ml-1.5 text-[10px] text-[var(--obs-teal)] font-mono">(BYOK)</span>}
                   </Link>
                 </li>
               ))}
