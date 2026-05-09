@@ -25,7 +25,7 @@ export default function AuthLayout({
       {/* Header */}
       <div className="relative z-10 p-6">
         <Link href="/" className="inline-flex items-center gap-2 group">
-          <div className="w-7 h-7 rounded-md bg-[var(--obs-teal)] flex items-center justify-center">
+          <div className="w-7 h-7 rounded-md bg-blue-600 flex items-center justify-center">
             <Globe className="w-4 h-4 text-background" />
           </div>
           <span className="font-bold text-sm tracking-wider uppercase text-foreground">
