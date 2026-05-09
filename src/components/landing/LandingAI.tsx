@@ -45,8 +45,8 @@ export function LandingAI() {
               <span className="text-[var(--obs-purple)]">Intelligence.</span>
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-8">
-              OBSERVE's AI layer uses GPT-4 to synthesize complex global events
-              into clear, structured briefings. Understand not just what happened,
+              Use your favorite AI to synthesize complex global events
+              into detailed, structured briefings. Understand not just what happened,
               but why it matters and what it means.
             </p>
 
