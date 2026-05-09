@@ -33,7 +33,7 @@ const FEATURES = [
   {
     icon: BookOpen,
     title: 'Country Intelligence Profiles',
-    description: 'Deep profiles for every nation: active conflicts, economic signals, weather events, shipping activity, and AI-generated briefings.',
+    description: 'Active conflicts, economic signals, weather events, shipping activity, and AI-generated briefings for every nation.',
     color: 'var(--obs-teal)',
   },
   {
