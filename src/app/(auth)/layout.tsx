@@ -18,7 +18,7 @@ export default function AuthLayout({
           </defs>
           <rect width="100%" height="100%" fill="url(#auth-grid)" />
         </svg>
-        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-[var(--obs-teal)]/5 blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-blue-600/5 blur-3xl" />
         <div className="absolute bottom-1/4 left-1/3 w-80 h-80 rounded-full bg-[var(--obs-purple)]/5 blur-3xl" />
       </div>
 
