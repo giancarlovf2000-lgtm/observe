@@ -51,7 +51,7 @@ const FEATURES = [
   {
     icon: Crosshair,
     title: 'Saved Watchlists',
-    description: 'Build personal intelligence workspaces around the countries, assets, and issues you care about. Your world, filtered for you.',
+    description: 'Build personal intelligence workspaces around the countries, assets, and issues you care about.',
     color: 'var(--obs-purple)',
   },
   {
