@@ -105,7 +105,7 @@ export function LandingHero() {
             className="border-[var(--obs-teal)]/40 text-[var(--obs-teal)] bg-[var(--obs-teal)]/5 px-4 py-1.5 text-xs font-mono tracking-wider"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--obs-teal)] mr-2 inline-block animate-pulse" />
-            LIVE INTELLIGENCE FEED ACTIVE
+            LIVE INTELLIGENCE FEED
           </Badge>
         </motion.div>
 
