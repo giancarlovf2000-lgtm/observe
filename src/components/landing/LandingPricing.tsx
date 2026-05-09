@@ -51,7 +51,7 @@ export function LandingPricing() {
           {/* Price */}
           <div className="text-center mb-8">
             <div className="text-sm font-mono text-[var(--obs-teal)] uppercase tracking-widest mb-3">
-              OBSERVE PRO
+              OBSERVE CENTER
             </div>
             <div className="flex items-baseline justify-center gap-1 mb-2">
               <span className="text-5xl font-bold text-foreground">$29</span>
