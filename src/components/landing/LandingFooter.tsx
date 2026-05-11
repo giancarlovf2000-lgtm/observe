@@ -33,12 +33,9 @@ export function LandingFooter() {
                 { name: 'Transport', byok: false }
               ].map((item) => (
                 <li key={item.name}>
-                  <Link
-                    href={`/${item.name.toLowerCase()}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <span className="text-sm text-muted-foreground">
                     {item.name}{item.byok && <span className="ml-1.5 text-[10px] text-[var(--obs-teal)] font-mono">(BYOK)</span>}
-                  </Link>
+                  </span>
                 </li>
               ))}
             </ul>
@@ -48,9 +45,20 @@ export function LandingFooter() {
           <div>
             <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Resources</div>
             <ul className="space-y-2">
-              {['Documentation', 'API Reference', 'Data Sources', 'Privacy Policy', 'Terms of Service'].map((item) => (
-                <li key={item}>
-                  <span className="text-sm text-muted-foreground">{item}</span>
+              {[
+                { name: 'Documentation', href: '/docs' },
+                { name: 'API Reference', href: '/api' },
+                { name: 'Data Sources', href: '/sources' },
+                { name: 'Privacy Policy', href: '/privacy' },
+                { name: 'Terms of Service', href: '/terms' }
+              ].map((item) => (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.name}
+                  </Link>
                 </li>
               ))}
             </ul>
