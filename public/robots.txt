@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /privacy
+Allow: /tos
+
+# Disallow authenticated/private routes
+Disallow: /dashboard
+Disallow: /map
+Disallow: /briefings
+Disallow: /alerts
+Disallow: /conflicts
+Disallow: /markets
+Disallow: /news
+Disallow: /weather
+Disallow: /transport
+Disallow: /watchlists
+Disallow: /countries
+Disallow: /events
+Disallow: /workspaces
+Disallow: /settings
+Disallow: /onboarding
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://www.observe.center/sitemap.xml

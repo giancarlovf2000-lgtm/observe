@@ -7,8 +7,8 @@ import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
 
 const INCLUDED = [
-  'Live weather & disaster alerts (USGS, NOAA, OpenMeteo)',
-  'Market & crypto prices (CoinGecko, ExchangeRate)',
+  'Live weather & disaster alerts (USGS, NOAA)',
+  'Market & crypto prices (CoinCap, ExchangeRate)',
   'Live flight & vessel tracking (OpenSky)',
   'Global events map',
   'Country intelligence profiles',
