@@ -36,26 +36,19 @@ export function LandingFooter() {
           <div>
             <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Resources</div>
             <ul className="space-y-2">
-              <li>
-                <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/tos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <a href="mailto:support@observe.center" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  Contact Support
-                </a>
-              </li>
+              {[
+                { label: 'Documentation',  href: '/docs' },
+                { label: 'API Reference',  href: '/api-reference' },
+                { label: 'Data Sources',   href: '/data-sources' },
+                { label: 'Privacy Policy', href: '/privacy' },
+                { label: 'Terms of Service', href: '/tos' },
+              ].map(item => (
+                <li key={item.href}>
+                  <Link href={item.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
