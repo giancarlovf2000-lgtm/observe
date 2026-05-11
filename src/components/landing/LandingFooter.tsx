@@ -26,12 +26,7 @@ export function LandingFooter() {
             <ul className="space-y-2">
               {['Map', 'Briefings', 'Conflicts', 'Markets', 'Weather', 'Transport'].map((item) => (
                 <li key={item}>
-                  <Link
-                    href={`/${item.toLowerCase()}`}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {item}
-                  </Link>
+                  <span className="text-sm text-muted-foreground">{item}</span>
                 </li>
               ))}
             </ul>
