@@ -1,5 +1,8 @@
 {
-  "alias": ["www.observe.center", "observe.center"],
+  "alias": [
+    "www.observe.center",
+    "observe.center"
+  ],
   "crons": [
     {
       "path": "/api/cron/news",
@@ -29,6 +32,15 @@
         {
           "key": "Cache-Control",
           "value": "no-store"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self' https://mysiteforge.com https://www.mysiteforge.com https://siteforge-dmart.vercel.app https://*.vercel.app"
         }
       ]
     }
